@@ -1,0 +1,4 @@
+-I
+/opt/homebrew/Cellar/jansson/2.14/include
+-I
+/Applications/Emacs.app/Contents/Resources/include/

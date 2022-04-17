@@ -1,0 +1,39 @@
+# -*- mode: restclient; url-max-redirections: 0 -*-
+
+:root = https://api.github.com
+
+#
+:token := (getenv "GITHUB_TOKEN")
+:auth := (base64-encode-string (concat "jiacai2050:" ":token"))
+:headers = <<
+Accept: application/vnd.github.v3.star+json
+Authorization: token :token
+#
+# 认证用户的所有仓库
+# https://docs.github.com/en/rest/reference/repos#list-repositories-for-the-authenticated-user
+GET :root/user/repos?type=all&per_page=100&page=1
+:headers
+
+# starred 仓库
+# https://docs.github.com/en/rest/reference/activity#list-repositories-starred-by-the-authenticated-user
+GET :root/user/starred?type=all&per_page=100&page=1
+:headers
+
+# 取消 starred 仓库
+# https://docs.github.com/en/rest/reference/activity#list-repositories-starred-by-the-authenticated-user
+DELETE :root/user/starred/weavejester/compojure1
+:headers
+
+# 新增 starred 仓库
+# https://docs.github.com/en/rest/reference/activity#list-repositories-starred-by-the-authenticated-user
+PUT :root/user/starred/weavejester/compojure
+:headers
+
+
+# https://github.com/NiklasTiede/Github-Trending-API
+GET https://gh-trending-api.herokuapp.com/repositories/rust?since=weekly
+#
+GET :root/repos/antirez/kilo
+:headers
+#
+GET :root/repos/jiacai2050/sicp

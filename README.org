@@ -1,0 +1,42 @@
+#+TITLE: GitHub star manager
+#+DATE: 2022-04-17T18:22:40+0800
+#+AUTHOR: Jiacai Liu
+#+LANGUAGE: cn
+#+EMAIL: jiacai2050+org@gmail.com
+#+OPTIONS: toc:nil num:nil
+#+STARTUP: content
+
+GitHub star manager built in GNU99 C, user interface:
+- Emacs
+- Cli (TODO)
+
+  [[file:screenshots/list.png]]
+
+* Install
+1. Download [[https://github.com/jiacai2050/github-star/blob/master/github-star.el][github-star.el]]
+2. Download required shared object from [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system, and rename it to =ghs-dyn.so= or =dll= suffix if you are on Windows
+3. Put =el= and =so= files under =load-path=
+4. Generate Github personal access tokens at https://github.com/settings/tokens
+
+#+BEGIN_SRC emacs-lisp
+(use-package github-star
+  :load-path "/path/to/github-star"
+  :config
+  (setq github-star-pat (getenv "GITHUB_TOKEN"))
+  (github-star-setup))
+
+#+END_SRC
+
+* Usage
+- =M-x github-star-sync= Sync GitHub star into local database
+- =M-x github-star-list= Display GitHub star in table view
+
+* Development
+** Ubuntu
+#+begin_src bash
+sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind
+#+end_src
+** macOS
+#+begin_src bash
+brew install jansson pkg-config
+#+end_src

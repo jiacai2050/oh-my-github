@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish:
+    timeout-minutes: 10
+    name: Release for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: ghs-dyn.so
+            asset_name: linux-ghs-dyn.so
+          # - os: windows-latest
+          #   artifact_name: eww_history_ext.dll
+          #   asset_name: ghs-dyn-dyn.dll
+          - os: macos-latest
+            artifact_name: ghs-dyn.dylib
+            asset_name: macos-x86-64-ghs-dyn.dylib
+
+    steps:
+    - uses: actions/checkout@v2
+    - if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install -y xxd libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev
+    - if: matrix.os == 'macos-latest'
+      run: brew install pkg-config jansson
+    - name: Build
+      run: make emacs
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: ./${{ matrix.artifact_name }}
+        asset_name: ${{ matrix.asset_name }}
+        tag: ${{ github.ref }}

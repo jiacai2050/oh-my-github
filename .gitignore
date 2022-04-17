@@ -1,0 +1,7 @@
+ghs-cli
+*.log
+*.db
+*.so
+*.o
+*.dylib
+/.vagrant
