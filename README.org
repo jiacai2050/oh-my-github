@@ -28,8 +28,9 @@ GitHub star manager built in GNU99 C, user interface:
 #+END_SRC
 
 * Usage
-- =M-x github-star-sync= Sync GitHub star into local database
-- =M-x github-star-list= Display GitHub star in table view
+- =M-x github-star-sync= Sync GitHub star into local database. Emacs maybe hang for a while depending on how many stars you have.
+  - Note: this command only need to be executed once.
+- =M-x github-star-list= Display GitHub star in table view.
 
 * Development
 ** Ubuntu

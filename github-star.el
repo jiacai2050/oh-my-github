@@ -144,6 +144,11 @@
   (ghs-dyn-teardown))
 
 ;;;###autoload
+(defun github-star-sync()
+  "Sync GitHub star into local database"
+  (ghs-dyn-sync))
+
+;;;###autoload
 (defun github-star-list ()
   "Display GitHub stars in table view"
   (interactive)
