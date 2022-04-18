@@ -1,18 +1,31 @@
-#+TITLE: GitHub star manager
+#+TITLE: GitHub Star
 #+DATE: 2022-04-17T18:22:40+0800
 #+AUTHOR: Jiacai Liu
-#+LANGUAGE: cn
+#+LANGUAGE: en
 #+EMAIL: jiacai2050+org@gmail.com
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
 
-GitHub star manager built in GNU99 C, user interface:
-- Emacs
-- Cli (TODO)
+GitHub Star(a.k.a GHS) is a tool for managing starred repositories on GitHub.
 
-  [[file:screenshots/list.png]]
+There are mainly two user interfaces:
+- Emacs. Full-featured
+  - *Sync* into local database
+  - *Search* by keyword or programming language
+  - *Unstar*
 
-* Install
+[[file:screenshots/list.png]]
+
+- CLI, TBD
+  - *Sync*
+
+* Features
+- Support local storage
+  - GitHub synchronization is only required on first use
+- Support search by keyword or programming language
+- Fast. GHS's core is built in GNU99 C, pass [[https://valgrind.org/][valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]] test
+* Emacs Interface
+** Install
 1. Download [[https://github.com/jiacai2050/github-star/blob/master/emacs/github-star.el][github-star.el]]
 2. Download required shared object from [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system, and rename it to =ghs-dyn.so= or =dll= suffix if you are on Windows
 3. Put =el= and =so= files under =load-path=
@@ -27,7 +40,7 @@ GitHub star manager built in GNU99 C, user interface:
 
 #+END_SRC
 
-* Usage
+** Usage
 - =M-x github-star-sync= Sync GitHub star into local database. Emacs maybe hang for a while depending on how many stars you have.
   - Note: this command only need to be executed once.
 - =M-x github-star-list= Display GitHub star in table view.

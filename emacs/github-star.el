@@ -136,7 +136,8 @@
   "Setup github-star"
   (if (string-empty-p github-star-pat)
       (error "Personal access token not set.")
-    (ghs-dyn-setup github-star-db-file github-star-pat)))
+    (ghs-dyn-setup (expand-file-name github-star-db-file)
+                   github-star-pat)))
 
 ;;;###autoload
 (defun github-star-teardown ()
