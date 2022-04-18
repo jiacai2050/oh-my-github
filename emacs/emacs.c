@@ -1,5 +1,5 @@
+#include "../core/ghs.h"
 #include "emacs-module.h"
-#include "ghs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

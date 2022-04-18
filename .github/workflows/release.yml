@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - '*'
+      - 'v*'
 
 jobs:
   publish:
@@ -15,13 +15,13 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: ghs-dyn.so
+            artifact_name: emacs/ghs-dyn.so
             asset_name: linux-ghs-dyn.so
           # - os: windows-latest
-          #   artifact_name: eww_history_ext.dll
-          #   asset_name: ghs-dyn-dyn.dll
+          #   artifact_name: emacs/ghs-dyn.dll
+          #   asset_name: ghs-dyn.dll
           - os: macos-latest
-            artifact_name: ghs-dyn.dylib
+            artifact_name: emacs/ghs-dyn.dylib
             asset_name: macos-x86-64-ghs-dyn.dylib
 
     steps:
@@ -31,7 +31,7 @@ jobs:
     - if: matrix.os == 'macos-latest'
       run: brew install pkg-config jansson
     - name: Build
-      run: make emacs
+      run: make ${{ matrix.artifact }}
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:

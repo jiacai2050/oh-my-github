@@ -13,14 +13,14 @@ GitHub star manager built in GNU99 C, user interface:
   [[file:screenshots/list.png]]
 
 * Install
-1. Download [[https://github.com/jiacai2050/github-star/blob/master/github-star.el][github-star.el]]
+1. Download [[https://github.com/jiacai2050/github-star/blob/master/emacs/github-star.el][github-star.el]]
 2. Download required shared object from [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system, and rename it to =ghs-dyn.so= or =dll= suffix if you are on Windows
 3. Put =el= and =so= files under =load-path=
 4. Generate Github personal access tokens at https://github.com/settings/tokens
 
 #+BEGIN_SRC emacs-lisp
 (use-package github-star
-  :load-path "/path/to/github-star"
+  :load-path "/path/to/github-star/emacs"
   :config
   (setq github-star-pat (getenv "GITHUB_TOKEN"))
   (github-star-setup))

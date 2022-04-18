@@ -1,20 +1,24 @@
+CORE_DIR = core
+EMACS_DIR = emacs
+CLI_DIR = cli
+
 ifeq ($(OS),Windows_NT)
 	uname_S := Windows
 else
 	uname_S := $(shell uname -s)
 endif
 
-SO_FILE = ghs-dyn.so
+SO_FILE = $(EMACS_DIR)/ghs-dyn.so
 ifeq ($(uname_S), Windows)
-	SO_FILE = ghs-dyn.dll
+	SO_FILE = $(EMACS_DIR)/ghs-dyn.dll
 endif
 ifeq ($(uname_S), Darwin)
-	SO_FILE = ghs-dyn.dylib
+	SO_FILE = $(EMACS_DIR)/ghs-dyn.dylib
 endif
 
 CLI = ghs-cli
-OBJECTS = cli.o ghs.o emacs.o
-HEADERS = create_table.h ghs.h
+OBJECTS = $(CORE_DIR)/ghs.o $(CLI_DIR)/cli.o $(EMACS_DIR)/emacs.o
+HEADERS = $(CORE_DIR)/create_table.h $(CORE_DIR)/ghs.h
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3)
 LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3)
 CC = gcc
@@ -30,19 +34,19 @@ $(CLI): $(OBJECTS)
 %.o: %.c $(HEADERS)
 	@if [ X$(GHS_TEST) = X1 ]; then \
 		echo "[Compile] test mode..." && \
-		$(CC) -D VERBOSE -D GHS_TEST $(CFLAGS) -c $< ;\
+		$(CC) -D VERBOSE -D GHS_TEST $(CFLAGS) -c $< -o $@ ;\
 	else \
-		$(CC) $(CFLAGS) -c $< ;\
+		$(CC) $(CFLAGS) -c $< -o $@ ;\
 	fi
 
-create_table.h: create_table.sql
+core/create_table.h: core/create_table.sql
 	xxd -i $< | tac | sed '3s/$$/, 0x00/' | tac > $@
 
 memcheck:
 	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(CLI) /tmp/test.db
 
-emacs: $(OBJECTS)
+$(SO_FILE): $(OBJECTS)
 	$(CC) -O3 -dynamiclib $(OBJECTS) $(LDFLAGS) -o $(SO_FILE)
 
 clean:
-	rm -f $(CLI) $(SO_FILE) $(OBJECTS) create_table.h
+	rm -f $(CLI) $(SO_FILE) $(OBJECTS)
