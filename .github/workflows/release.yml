@@ -15,14 +15,14 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: emacs/ghs-dyn.so
-            asset_name: linux-ghs-dyn.so
+            artifact_name: emacs/omg-dyn.so
+            asset_name: linux-omg-dyn.so
           # - os: windows-latest
-          #   artifact_name: emacs/ghs-dyn.dll
-          #   asset_name: ghs-dyn.dll
+          #   artifact_name: emacs/omg-dyn.dll
+          #   asset_name: omg-dyn.dll
           - os: macos-latest
-            artifact_name: emacs/ghs-dyn.dylib
-            asset_name: macos-x86-64-ghs-dyn.dylib
+            artifact_name: emacs/omg-dyn.dylib
+            asset_name: macos-x86-64-omg-dyn.dylib
 
     steps:
     - uses: actions/checkout@v2

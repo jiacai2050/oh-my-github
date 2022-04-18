@@ -11,12 +11,12 @@ Authorization: token :token
 #
 # 认证用户的所有仓库
 # https://docs.github.com/en/rest/reference/repos#list-repositories-for-the-authenticated-user
-GET :root/user/repos?type=all&per_page=100&page=1
+GET :root/user/repos?type=all&per_page=100&page=2
 :headers
 
 # starred 仓库
 # https://docs.github.com/en/rest/reference/activity#list-repositories-starred-by-the-authenticated-user
-GET :root/user/starred?type=all&per_page=100&page=1
+GET :root/user/starred?type=all&per_page=10&page=1
 :headers
 
 # 取消 starred 仓库
@@ -37,3 +37,14 @@ GET :root/repos/antirez/kilo
 :headers
 #
 GET :root/repos/jiacai2050/sicp
+
+#
+GET :root/user
+:headers
+#
+GET :root/gists
+:headers
+
+#
+GET :root/gists/cf30db07bb2e95ffb7d5114bc95c0cfc
+:headers

@@ -1,4 +1,4 @@
-#+TITLE: GitHub Star
+#+TITLE: Oh My GitHub
 #+DATE: 2022-04-17T18:22:40+0800
 #+AUTHOR: Jiacai Liu
 #+LANGUAGE: en
@@ -6,7 +6,7 @@
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
 
-GitHub Star(a.k.a GHS) is a tool for managing starred repositories on GitHub.
+Oh My GitHub is delightful, open source tool for managing your GitHub.
 
 There are mainly two user interfaces:
 - Emacs. Full-featured
@@ -23,27 +23,29 @@ There are mainly two user interfaces:
 - Support local storage
   - GitHub synchronization is only required on first use
 - Support search by keyword or programming language
-- Fast. GHS's core is built in GNU99 C, pass [[https://valgrind.org/][valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]] test
+- Fast. Oh My GitHub's core is built in GNU99 C, pass [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]] test
+
 * Emacs Interface
 ** Install
-1. Download [[https://github.com/jiacai2050/github-star/blob/master/emacs/github-star.el][github-star.el]]
-2. Download required shared object from [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system, and rename it to =ghs-dyn.so= or =dll= suffix if you are on Windows
+1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][oh-my-github.el]]
+2. Download required shared object from [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
 3. Put =el= and =so= files under =load-path=
 4. Generate Github personal access tokens at https://github.com/settings/tokens
 
 #+BEGIN_SRC emacs-lisp
-(use-package github-star
-  :load-path "/path/to/github-star/emacs"
+(use-package oh-my-github
+  :load-path "/path/to/oh-my-github/emacs"
   :config
-  (setq github-star-pat (getenv "GITHUB_TOKEN"))
-  (github-star-setup))
+  (setq oh-my-github-pat (getenv "GITHUB_TOKEN"))
+  (oh-my-github-setup))
 
 #+END_SRC
 
 ** Usage
-- =M-x github-star-sync= Sync GitHub star into local database. Emacs maybe hang for a while depending on how many stars you have.
+- =M-x oh-my-github-sync= Sync GitHub stars/repos into local database. Emacs maybe hang for a while depending on how many stars you have.
   - Note: this command only need to be executed once.
-- =M-x github-star-list= Display GitHub star in table view.
+- =M-x oh-my-github-star-list= Display GitHub stars in table view.
+- =M-x oh-my-github-repo-list= Display GitHub repos in table view.
 
 * Development
 ** Ubuntu
@@ -54,3 +56,8 @@ sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-de
 #+begin_src bash
 brew install jansson pkg-config
 #+end_src
+
+* LICENSE
+Copyright (c) 2022 Jiacai Liu <jiacai2050+omg@gmail.com>
+
+GitHub Star is distributed under [[https://www.gnu.org/licenses/gpl-3.0.txt][GPL-3.0]] license.

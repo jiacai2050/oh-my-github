@@ -1,4 +1,4 @@
-#include "../core/ghs.h"
+#include "../core/omg.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,15 +15,32 @@ int main(int argc, char **argv) {
   }
   const char *db_path = argv[1];
 
-  ghs_context ctx;
-  ghs_error err = ghs_setup_context(db_path, token, &ctx);
+  omg_context ctx;
+  omg_error err = omg_setup_context(db_path, token, &ctx);
   if (!is_ok(err)) {
     print_error(err);
     return 1;
   }
-  err = ghs_sync_stars(ctx);
+  err = omg_sync_stars(ctx);
   if (!is_ok(err)) {
     print_error(err);
     return 1;
   }
+
+  err = omg_sync_repos(ctx);
+  if (!is_ok(err)) {
+    print_error(err);
+    return 1;
+  }
+
+  /* omg_auto_repo_list lst; */
+  /* err = omg_query_repos(ctx, "vagrant", NULL, &lst); */
+  /* err = omg_query_repos(ctx, NULL, "Rust", &lst); */
+  /* if (!is_ok(err)) { */
+  /*   print_error(err); */
+  /*   return 1; */
+  /* } */
+  /* for (int i = 0; i < lst.length; i++) { */
+  /*   printf("%s\n", lst.repo_array[i].full_name); */
+  /* } */
 }

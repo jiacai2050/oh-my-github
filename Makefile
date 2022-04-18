@@ -8,23 +8,23 @@ else
 	uname_S := $(shell uname -s)
 endif
 
-SO_FILE = $(EMACS_DIR)/ghs-dyn.so
+SO_FILE = $(EMACS_DIR)/omg-dyn.so
 ifeq ($(uname_S), Windows)
-	SO_FILE = $(EMACS_DIR)/ghs-dyn.dll
+	SO_FILE = $(EMACS_DIR)/omg-dyn.dll
 endif
 ifeq ($(uname_S), Darwin)
-	SO_FILE = $(EMACS_DIR)/ghs-dyn.dylib
+	SO_FILE = $(EMACS_DIR)/omg-dyn.dylib
 endif
 
-CLI = ghs-cli
-OBJECTS = $(CORE_DIR)/ghs.o $(CLI_DIR)/cli.o $(EMACS_DIR)/emacs.o
-HEADERS = $(CORE_DIR)/create_table.h $(CORE_DIR)/ghs.h
+CLI = omg-cli
+OBJECTS = $(CORE_DIR)/omg.o $(CLI_DIR)/cli.o $(EMACS_DIR)/emacs.o
+HEADERS = $(CORE_DIR)/create_table.h $(CORE_DIR)/omg.h
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3)
 LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3)
 CC = gcc
 
 $(CLI): $(OBJECTS)
-	@if [ X$(GHS_TEST) = X1 ]; then \
+	@if [ X$(OMG_TEST) = X1 ]; then \
 		echo "[Linking] test mode..." && \
 		$(CC) -O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address $(OBJECTS) $(LDFLAGS) -o $(CLI) ;\
 	else \
@@ -32,9 +32,9 @@ $(CLI): $(OBJECTS)
 	fi
 
 %.o: %.c $(HEADERS)
-	@if [ X$(GHS_TEST) = X1 ]; then \
+	@if [ X$(OMG_TEST) = X1 ]; then \
 		echo "[Compile] test mode..." && \
-		$(CC) -D VERBOSE -D GHS_TEST $(CFLAGS) -c $< -o $@ ;\
+		$(CC) -D VERBOSE -D OMG_TEST $(CFLAGS) -c $< -o $@ ;\
 	else \
 		$(CC) $(CFLAGS) -c $< -o $@ ;\
 	fi

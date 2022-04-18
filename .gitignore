@@ -1,7 +1,8 @@
-ghs-cli
+omg-cli
 *.log
 *.db
 *.so
+*.json
 *.o
 *.dylib
 /.vagrant
