@@ -114,6 +114,10 @@ struct omg_context {
   /* int timeout; */
 };
 
+omg_error omg_new_error() {
+  return (omg_error){.code = OMG_CODE_OK, .message = NULL};
+}
+
 void print_error(omg_error err) {
   printf("code:%d, msg:%s\n", err.code, err.message);
 }
@@ -232,14 +236,19 @@ static omg_error omg_request(omg_context ctx, const char *method,
 
   long response_code;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-  if (response_code == 200) {
-    json_error_t error;
-    json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
-    if (!resp) {
-      return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
-    }
-    *out = resp;
+  static int no_content = 204;
+  static int not_modified = 304;
+  if (response_code == no_content || response_code == not_modified) {
+    return NO_ERROR;
   }
+
+  json_error_t error;
+  json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
+  if (!resp) {
+    return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
+  }
+  *out = resp;
+
   return NO_ERROR;
 }
 
@@ -252,6 +261,18 @@ static omg_error omg_request(omg_context ctx, const char *method,
       free((void *)(obj)->field);                                              \
     }                                                                          \
   })
+
+omg_repo omg_new_repo() {
+  return (omg_repo){
+      .full_name = NULL,
+      .description = NULL,
+      .created_at = NULL,
+      .license = NULL,
+      .pushed_at = NULL,
+      .lang = NULL,
+      .homepage = NULL,
+  };
+}
 
 void omg_free_repo(omg_repo *repo) {
   if (repo) {
@@ -266,6 +287,10 @@ void omg_free_repo(omg_repo *repo) {
     FREE_OBJ_FIELD(repo, lang);
     FREE_OBJ_FIELD(repo, homepage);
   }
+}
+
+omg_repo_list omg_new_repo_list() {
+  return (omg_repo_list){.repo_array = NULL, .length = 0};
 }
 
 void omg_free_repo_list(omg_repo_list *repo_lst) {
@@ -417,7 +442,7 @@ omg_error omg_sync_repos(omg_context ctx) {
       break;
     }
 #endif
-    omg_auto_repo_list repo_lst;
+    omg_auto_repo_list repo_lst = omg_new_repo_list();
     omg_error err = fetch_repos_by_page(ctx, page_num++, &repo_lst);
     if (!is_ok(err)) {
       return err;
@@ -496,7 +521,7 @@ static omg_error prepare_query_sql(omg_context ctx, bool is_star,
 }
 
 static omg_repo repo_from_db(sqlite3_stmt *stmt) {
-  omg_repo repo = {};
+  omg_repo repo = omg_new_repo();
   int column = 1;
   repo.id = sqlite3_column_int(stmt, column++);
   repo.full_name = strdup_when_not_null(sqlite3_column_text(stmt, column++));
@@ -546,6 +571,10 @@ omg_error omg_query_repos(omg_context ctx, const char *keyword,
 /* GitHub stars */
 /****************/
 
+omg_star omg_new_star() {
+  return (omg_star){.starred_at = NULL, .repo = omg_new_repo()};
+}
+
 void omg_free_star(omg_star *star) {
   if (star) {
 #ifdef VERBOSE
@@ -554,6 +583,10 @@ void omg_free_star(omg_star *star) {
     FREE_OBJ_FIELD(star, starred_at);
     omg_free_repo(&(star->repo));
   }
+}
+
+omg_star_list omg_new_star_list() {
+  return (omg_star_list){.star_array = NULL, .length = 0};
 }
 
 void omg_free_star_list(omg_star_list *star_list) {
@@ -611,7 +644,7 @@ omg_error omg_query_stars(omg_context ctx, const char *keyword,
   size_t row = 0;
   int rc = 0;
   while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-    omg_repo repo = {};
+    omg_repo repo = omg_new_repo();
     {
       int column = 1;
       repo.id = sqlite3_column_int(stmt, column++);
@@ -693,7 +726,7 @@ omg_error omg_sync_stars(omg_context ctx) {
       break;
     }
 #endif
-    omg_auto_star_list star_lst;
+    omg_auto_star_list star_lst = omg_new_star_list();
     omg_error err = fetch_stars_by_page(ctx, page_num++, &star_lst);
     if (!is_ok(err)) {
       return err;
@@ -741,4 +774,95 @@ omg_error omg_unstar(omg_context ctx, size_t repo_id) {
   char url[128];
   sprintf(url, "%s/user/starred/%s", API_ROOT, full_name);
   return omg_request(ctx, DELETE_METHOD, url, NULL, NULL);
+}
+
+omg_user omg_new_user() {
+  return (omg_user){
+      .login = NULL,
+      .name = NULL,
+      .company = NULL,
+      .blog = NULL,
+      .location = NULL,
+      .email = NULL,
+      .bio = NULL,
+      .twitter_username = NULL,
+      .created_at = NULL,
+  };
+}
+
+void omg_free_user(omg_user *user) {
+  if (user) {
+#ifdef VERBOSE
+    printf("free omg_user\n");
+#endif
+    FREE_OBJ_FIELD(user, login);
+    FREE_OBJ_FIELD(user, name);
+    FREE_OBJ_FIELD(user, company);
+    FREE_OBJ_FIELD(user, blog);
+    FREE_OBJ_FIELD(user, location);
+    FREE_OBJ_FIELD(user, email);
+    FREE_OBJ_FIELD(user, bio);
+    FREE_OBJ_FIELD(user, twitter_username);
+    FREE_OBJ_FIELD(user, created_at);
+  }
+}
+
+static int integer_or_default(json_t *obj, const char *key) {
+  json_t *tmp = json_object_get(obj, key);
+  if (tmp) {
+    return json_integer_value(tmp);
+  }
+  return -1;
+}
+
+omg_error omg_whoami(omg_context ctx, const char *username, omg_user *out) {
+  char url[128];
+  if (empty_string(username)) {
+    sprintf(url, "%s/user", API_ROOT);
+  } else {
+    sprintf(url, "%s/users/%s", API_ROOT, username);
+  }
+
+  json_auto_t *resp = NULL;
+  omg_error err = omg_request(ctx, GET_METHOD, url, NULL, &resp);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  json_t *msg = json_object_get(resp, "message");
+  if (msg) {
+    fprintf(stderr, "get whoami(%s) failed. %s", username, json_dumps(resp, 0));
+    if (strcmp(json_string_value(msg), "Not Found")) {
+      return (omg_error){.code = OMG_CODE_GITHUB, .message = "User Not Found"};
+    }
+
+    return (omg_error){.code = OMG_CODE_GITHUB,
+                       .message = "GitHub PAT authentication failed"};
+  }
+
+  int private_repos = integer_or_default(resp, "total_private_repos");
+  int private_gists = integer_or_default(resp, "private_gists");
+  int disk_usage = integer_or_default(resp, "disk_usage");
+  *out = (omg_user){
+      .login = dup_json_string(resp, "login"),
+      .id = json_integer_value(json_object_get(resp, "id")),
+      .name = dup_json_string(resp, "name"),
+      .company = dup_json_string(resp, "company"),
+      .blog = dup_json_string(resp, "blog"),
+      .location = dup_json_string(resp, "location"),
+      .email = dup_json_string(resp, "email"),
+      .hireable = json_boolean_value(json_object_get(resp, "hireable")),
+      .bio = dup_json_string(resp, "bio"),
+      .twitter_username = dup_json_string(resp, "twitter_username"),
+      .public_repos = json_integer_value(json_object_get(resp, "public_repos")),
+      .public_gists = json_integer_value(json_object_get(resp, "public_gists")),
+      .private_repos = private_repos,
+      .private_gists = private_gists,
+      .followers = json_integer_value(json_object_get(resp, "followers")),
+      .following = json_integer_value(json_object_get(resp, "following")),
+      .created_at = dup_json_string(resp, "created_at"),
+      .disk_usage = disk_usage,
+  };
+
+  return NO_ERROR;
 }

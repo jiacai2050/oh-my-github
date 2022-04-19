@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   }
   const char *db_path = argv[1];
 
-  omg_context ctx;
+  omg_context ctx = NULL;
   omg_error err = omg_setup_context(db_path, token, &ctx);
   if (!is_ok(err)) {
     print_error(err);

@@ -42,6 +42,9 @@ GET :root/repos/jiacai2050/sicp
 GET :root/user
 :headers
 #
+GET :root/users/jiacai2050
+:headers
+#
 GET :root/gists
 :headers
 

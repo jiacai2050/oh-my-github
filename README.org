@@ -14,7 +14,7 @@ There are mainly two user interfaces:
   - *Search* by keyword or programming language
   - *Unstar*
 
-[[file:screenshots/list.png]]
+[[file:screenshots/stars-list.png]]
 
 - CLI, TBD
   - *Sync*
@@ -30,7 +30,7 @@ There are mainly two user interfaces:
 1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][oh-my-github.el]]
 2. Download required shared object from [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
 3. Put =el= and =so= files under =load-path=
-4. Generate Github personal access tokens at https://github.com/settings/tokens
+4. Generate Github personal access tokens at https://github.com/settings/tokens. You can check authentication with =M-x oh-my-github-whoami==.
 
 #+BEGIN_SRC emacs-lisp
 (use-package oh-my-github
@@ -46,6 +46,42 @@ There are mainly two user interfaces:
   - Note: this command only need to be executed once.
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
+- =M-x oh-my-github-whoami= Display GitHub user information.
+#+begin_src bash
++---------------+--------------------+
+|Created At     |2011-09-03T15:26:22Z|
++---------------+--------------------+
+|ID             |1024025             |
++---------------+--------------------+
+|Login          |torvalds            |
++---------------+--------------------+
+|Name           |Linus Torvalds      |
++---------------+--------------------+
+|Company        |Linux Foundation    |
++---------------+--------------------+
+|Blog           |                    |
++---------------+--------------------+
+|Location       |Portland, OR        |
++---------------+--------------------+
+|Email          |                    |
++---------------+--------------------+
+|Hireable       |0                   |
++---------------+--------------------+
+|Public Repos   |0                   |
++---------------+--------------------+
+|Public Gists   |0                   |
++---------------+--------------------+
+|Private Repos  |-1                  |
++---------------+--------------------+
+|Private Gists  |-1                  |
++---------------+--------------------+
+|Followers      |156351              |
++---------------+--------------------+
+|Following      |0                   |
++---------------+--------------------+
+|Disk Usage     |-1                  |
++---------------+--------------------+
+#+end_src
 
 * Development
 ** Ubuntu

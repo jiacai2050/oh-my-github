@@ -123,6 +123,23 @@
        (string-to-number (plist-get (cdr size-btn-x) 'help-echo))
        (string-to-number (plist-get (cdr size-btn-y) 'help-echo))))))
 
+(defun oh-my-github--init-tabulated-list (first-column sort-key search-entries-fn)
+  (setq tabulated-list-format `[,first-column
+                                ("Repository" 25 t)
+                                ("Language" 8 t)
+                                ("Stars" 6 ,(oh-my-github--integer-compare 3))
+                                ("Forks" 6 ,(oh-my-github--integer-compare 4))
+                                ("License" 7 t)
+                                ("Size" 7 ,(oh-my-github--size-compare 6))
+                                ("Description" 50)]
+
+        tabulated-list-padding 2
+        tabulated-list-sort-key sort-key
+        tabulated-list-entries search-entries-fn)
+
+  (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
+  (tabulated-list-init-header))
+
 (defvar oh-my-github-repos-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
@@ -134,21 +151,9 @@
   "Local keymap for oh-my-github-repos mode buffers.")
 
 (define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github repos" "Manage GitHub owned repositories"
-  (setq tabulated-list-format `[("CreatedAt" 20 t)
-                                ("Repository" 25 t)
-                                ("Language" 9 t)
-                                ("Stars" 6 ,(oh-my-github--integer-compare 3))
-                                ("Forks" 6 ,(oh-my-github--integer-compare 4))
-                                ("License" 7 t)
-                                ("Size" 7 ,(oh-my-github--size-compare 6))
-                                ("Description" 50)]
-
-        tabulated-list-padding 2
-        tabulated-list-sort-key (cons "CreatedAt" t)
-        tabulated-list-entries 'oh-my-github--search-repos)
-
-  (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
-  (tabulated-list-init-header))
+  (oh-my-github--init-tabulated-list '("CreatedAt" 20 t)
+                                     (cons "CreatedAt" t)
+                                     'oh-my-github--search-repos))
 
 (defvar oh-my-github-stars-mode-map
   (let ((map (make-sparse-keymap)))
@@ -158,21 +163,9 @@
   "Local keymap for oh-my-github-stars mode buffers.")
 
 (define-derived-mode oh-my-github-stars-mode oh-my-github-repos-mode "oh-my-github stars" "Manage GitHub starred repositories"
-  (setq tabulated-list-format `[("StarredAt" 20 t)
-                                ("Repository" 25 t)
-                                ("Language" 9 t)
-                                ("Stars" 6 ,(oh-my-github--integer-compare 3))
-                                ("Forks" 6 ,(oh-my-github--integer-compare 4))
-                                ("License" 7 t)
-                                ("Size" 7 ,(oh-my-github--size-compare 6))
-                                ("Description" 50)]
-
-        tabulated-list-padding 2
-        tabulated-list-sort-key (cons "StarredAt" t)
-        tabulated-list-entries 'oh-my-github--search-stars)
-
-  (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
-  (tabulated-list-init-header))
+  (oh-my-github--init-tabulated-list '("StarredAt" 20 t)
+                                     (cons "StarredAt" t)
+                                     'oh-my-github--search-stars))
 
 ;;;###autoload
 (defun oh-my-github-setup()
@@ -197,7 +190,7 @@ Note: Emacs maybe hang for a while depending on how many repositories you have."
 (defun oh-my-github-star-list ()
   "Display GitHub starred repositories in table view."
   (interactive)
-  (with-current-buffer (get-buffer-create "*oh-my-github stars*")
+  (with-current-buffer (get-buffer-create "*oh-my-github starred repositories*")
     (oh-my-github-stars-mode)
     (tabulated-list-print t)
     (switch-to-buffer (current-buffer))))
@@ -206,10 +199,43 @@ Note: Emacs maybe hang for a while depending on how many repositories you have."
 (defun oh-my-github-repo-list ()
   "Display GitHub owned repositories in table view."
   (interactive)
-  (with-current-buffer (get-buffer-create "*oh-my-github repo*")
+  (with-current-buffer (get-buffer-create "*oh-my-github owned repositories*")
     (oh-my-github-repos-mode)
     (tabulated-list-print t)
     (switch-to-buffer (current-buffer))))
+
+;;;###autoload
+(defun oh-my-github-whoami (&optional username)
+  "Display user information, represented by GitHub personal access token(PAT)."
+  (interactive (list (when current-prefix-arg
+                       (read-string "Enter GitHub username: "))))
+  (let ((buf (get-buffer-create "*oh-my-github whoami*"))
+        (who (omg-dyn-whoami username))
+        (col-sep ",,,")
+        (row-sep "\n"))
+    (with-current-buffer buf
+	  (read-only-mode -1)
+	  (erase-buffer)
+	  (insert "Created At" col-sep (plist-get who 'created-at) row-sep)
+	  (insert "ID" col-sep (number-to-string (plist-get who 'id)) row-sep)
+	  (insert "Login" col-sep (plist-get who 'login) row-sep)
+	  (insert "Name" col-sep (plist-get who 'name) row-sep)
+	  (insert "Company" col-sep (plist-get who 'company) row-sep)
+	  (insert "Blog" col-sep (plist-get who 'blog) row-sep)
+	  (insert "Location" col-sep (plist-get who 'location) row-sep)
+	  (insert "Email" col-sep (plist-get who 'email) row-sep)
+	  (insert "Hireable" col-sep (number-to-string (plist-get who 'hireable)) row-sep)
+	  (insert "Public Repos" col-sep (number-to-string (plist-get who 'public-gists)) row-sep)
+	  (insert "Public Gists" col-sep (number-to-string (plist-get who 'public-gists)) row-sep)
+	  (insert "Private Repos" col-sep (number-to-string (plist-get who 'private-repos)) row-sep)
+	  (insert "Private Gists" col-sep (number-to-string (plist-get who 'private-gists)) row-sep)
+	  (insert "Followers" col-sep (number-to-string (plist-get who 'followers)) row-sep)
+	  (insert "Following" col-sep (number-to-string (plist-get who 'following)) row-sep)
+	  (insert "Disk Usage" col-sep (number-to-string (plist-get who 'disk-usage)) row-sep)
+	  (table-capture (point-min) (point-max)
+				     col-sep row-sep 'left 15)
+	  (read-only-mode)
+	  (switch-to-buffer buf))))
 
 (provide 'oh-my-github)
 
