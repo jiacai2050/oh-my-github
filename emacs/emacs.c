@@ -313,10 +313,12 @@ emacs_value omg_dyn_teardown(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   if (ctx) {
     omg_free_context(&ctx);
     ctx = NULL;
-    return Qt;
+    env->free_global_ref(env, Qt);
+    env->free_global_ref(env, Qnil);
+    return lisp_symbol(env, "t");
   }
 
-  return Qnil;
+  return lisp_symbol(env, "nil");
 }
 
 int emacs_module_init(runtime ert) {

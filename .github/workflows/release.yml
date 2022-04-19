@@ -27,11 +27,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y xxd libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev
+      run: |
+        sudo apt-get install -y xxd libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev
+        make emacs/omg-dyn.so
     - if: matrix.os == 'macos-latest'
-      run: brew install pkg-config jansson
-    - name: Build
-      run: make ${{ matrix.artifact }}
+      run: |
+        brew install pkg-config jansson
+        make emacs/omg-dyn.dylib
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:

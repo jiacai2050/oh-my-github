@@ -47,7 +47,7 @@ There are mainly two user interfaces:
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.
-#+begin_src bash
+#+begin_example
 +---------------+--------------------+
 |Created At     |2011-09-03T15:26:22Z|
 +---------------+--------------------+
@@ -81,7 +81,7 @@ There are mainly two user interfaces:
 +---------------+--------------------+
 |Disk Usage     |-1                  |
 +---------------+--------------------+
-#+end_src
+#+end_example
 
 * Development
 ** Ubuntu
