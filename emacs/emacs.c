@@ -41,6 +41,12 @@ const char *FEATURE_NAME = "omg-dyn";
     _env_->funcall(_env_, env->intern(env, (fn_name)), _nargs_, _args_);       \
   })
 
+#define lisp_integer(env, integer)                                             \
+  ({                                                                           \
+    emacs_env *_env_ = env;                                                    \
+    _env_->make_integer(_env_, (integer));                                     \
+  })
+
 #define ENSURE_SETUP(env)                                                      \
   do {                                                                         \
     if (ctx == NULL) {                                                         \
@@ -119,7 +125,17 @@ omg_dyn_query_common(emacs_env *env, const char *first_column, omg_repo repo) {
   sprintf(stars_count, "%d", repo.stargazers_count);
   char forks_count[8];
   sprintf(forks_count, "%d", repo.forks_count);
-  omg_auto_char size = human_size(repo.size);
+  char size_str[8];
+  sprintf(size_str, "%d", repo.size);
+  omg_auto_char readable_size = human_size(repo.size);
+  emacs_value size_button =
+      lisp_funcall(env, "cons", lisp_string(env, readable_size),
+                   (lisp_funcall(env, "list",
+                                 // display as plain text
+                                 lisp_symbol(env, "face"), Qnil,
+                                 // echo full digits
+                                 lisp_symbol(env, "help-echo"),
+                                 lisp_string(env, size_str), )));
 
   emacs_value row = lisp_funcall(
       env, "list", lisp_string(env, repo_id),
@@ -127,8 +143,7 @@ omg_dyn_query_common(emacs_env *env, const char *first_column, omg_repo repo) {
                    lisp_string(env, string_or_empty(repo.full_name)),
                    lisp_string(env, string_or_empty(repo.lang)),
                    lisp_string(env, stars_count), lisp_string(env, forks_count),
-                   lisp_string(env, string_or_empty(repo.license)),
-                   lisp_string(env, size),
+                   lisp_string(env, string_or_empty(repo.license)), size_button,
                    lisp_string(env, string_or_empty(repo.description)), ));
   return row;
 }
@@ -136,7 +151,6 @@ omg_dyn_query_common(emacs_env *env, const char *first_column, omg_repo repo) {
 emacs_value omg_dyn_query_repos(emacs_env *env, ptrdiff_t nargs,
                                 emacs_value *args, void *data) {
   ENSURE_SETUP(env);
-  omg_star_list star_lst;
   char *keyword = NULL;
   char *lang = NULL;
   if (nargs > 0) {

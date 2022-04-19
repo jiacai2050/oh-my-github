@@ -6,11 +6,11 @@
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
 
-Oh My GitHub is delightful, open source tool for managing your GitHub.
+Oh My GitHub is delightful, open source tool for managing your GitHub repositories.
 
 There are mainly two user interfaces:
 - Emacs. Full-featured
-  - *Sync* into local database
+  - *Sync* repositories(owned and starred) list into local database
   - *Search* by keyword or programming language
   - *Unstar*
 
@@ -42,10 +42,10 @@ There are mainly two user interfaces:
 #+END_SRC
 
 ** Usage
-- =M-x oh-my-github-sync= Sync GitHub stars/repos into local database. Emacs maybe hang for a while depending on how many stars you have.
+- =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred) into local database. Emacs maybe hang for a while depending on how many repositories you have.
   - Note: this command only need to be executed once.
-- =M-x oh-my-github-star-list= Display GitHub stars in table view.
-- =M-x oh-my-github-repo-list= Display GitHub repos in table view.
+- =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
+- =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
 
 * Development
 ** Ubuntu

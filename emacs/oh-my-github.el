@@ -109,39 +109,19 @@
     (setq-local oh-my-github-query-language language)
     (tabulated-list-print t)))
 
-(defvar oh-my-github-stars-mode-map
-  (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map tabulated-list-mode-map)
-    (define-key map (kbd "RET") 'oh-my-github-browse-repo)
-    (define-key map (kbd "w") 'oh-my-github-copy-repo-url)
-    (define-key map (kbd "s") 'oh-my-github-search)
-    (define-key map (kbd "d") 'oh-my-github-unstar)
-    (define-key map (kbd "s-u") 'tabulated-list-revert)
-    map)
-  "Local keymap for oh-my-github-stars mode buffers.")
-
 (defun oh-my-github--integer-compare (column)
   (lambda (x y)
     (<
      (string-to-number (aref (cadr x) column))
      (string-to-number (aref (cadr y) column)))))
 
-(define-derived-mode oh-my-github-stars-mode tabulated-list-mode "oh-my-github stars" "Manage Github stars"
-  (setq tabulated-list-format `[("StarredAt" 20 t)
-                                ("Repository" 25 t)
-                                ("Language" 9 t)
-                                ("Stars" 6 ,(oh-my-github--integer-compare 3))
-                                ("Forks" 6 ,(oh-my-github--integer-compare 4))
-                                ("License" 7 t)
-                                ("Size" 7 t)
-                                ("Description" 50)]
-
-        tabulated-list-padding 2
-        tabulated-list-sort-key (cons "StarredAt" t)
-        tabulated-list-entries 'oh-my-github--search-stars)
-
-  (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
-  (tabulated-list-init-header))
+(defun oh-my-github--size-compare (column)
+  (lambda (x y)
+    (let ((size-btn-x (aref (cadr x) column))
+          (size-btn-y (aref (cadr y) column)))
+      (<
+       (string-to-number (plist-get (cdr size-btn-x) 'help-echo))
+       (string-to-number (plist-get (cdr size-btn-y) 'help-echo))))))
 
 (defvar oh-my-github-repos-mode-map
   (let ((map (make-sparse-keymap)))
@@ -153,19 +133,43 @@
     map)
   "Local keymap for oh-my-github-repos mode buffers.")
 
-(define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github repos" "Manage Github repos"
+(define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github repos" "Manage GitHub owned repositories"
   (setq tabulated-list-format `[("CreatedAt" 20 t)
                                 ("Repository" 25 t)
                                 ("Language" 9 t)
                                 ("Stars" 6 ,(oh-my-github--integer-compare 3))
                                 ("Forks" 6 ,(oh-my-github--integer-compare 4))
                                 ("License" 7 t)
-                                ("Size" 7 t)
+                                ("Size" 7 ,(oh-my-github--size-compare 6))
                                 ("Description" 50)]
 
         tabulated-list-padding 2
         tabulated-list-sort-key (cons "CreatedAt" t)
         tabulated-list-entries 'oh-my-github--search-repos)
+
+  (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
+  (tabulated-list-init-header))
+
+(defvar oh-my-github-stars-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map oh-my-github-repos-mode-map)
+    (define-key map (kbd "d") 'oh-my-github-unstar)
+    map)
+  "Local keymap for oh-my-github-stars mode buffers.")
+
+(define-derived-mode oh-my-github-stars-mode oh-my-github-repos-mode "oh-my-github stars" "Manage GitHub starred repositories"
+  (setq tabulated-list-format `[("StarredAt" 20 t)
+                                ("Repository" 25 t)
+                                ("Language" 9 t)
+                                ("Stars" 6 ,(oh-my-github--integer-compare 3))
+                                ("Forks" 6 ,(oh-my-github--integer-compare 4))
+                                ("License" 7 t)
+                                ("Size" 7 ,(oh-my-github--size-compare 6))
+                                ("Description" 50)]
+
+        tabulated-list-padding 2
+        tabulated-list-sort-key (cons "StarredAt" t)
+        tabulated-list-entries 'oh-my-github--search-stars)
 
   (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
   (tabulated-list-init-header))
@@ -185,12 +189,13 @@
 
 ;;;###autoload
 (defun oh-my-github-sync ()
-  "Sync GitHub repositories into local database"
+  "Sync GitHub repositories(owned and starred) into local database.
+Note: Emacs maybe hang for a while depending on how many repositories you have."
   (omg-dyn-sync))
 
 ;;;###autoload
 (defun oh-my-github-star-list ()
-  "Display stars in table view"
+  "Display GitHub starred repositories in table view."
   (interactive)
   (with-current-buffer (get-buffer-create "*oh-my-github stars*")
     (oh-my-github-stars-mode)
@@ -199,7 +204,7 @@
 
 ;;;###autoload
 (defun oh-my-github-repo-list ()
-  "Display repositories in table view"
+  "Display GitHub owned repositories in table view."
   (interactive)
   (with-current-buffer (get-buffer-create "*oh-my-github repo*")
     (oh-my-github-repos-mode)
