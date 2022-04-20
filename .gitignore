@@ -6,3 +6,4 @@ omg-cli
 *.o
 *.dylib
 /.vagrant
+.DS_Store

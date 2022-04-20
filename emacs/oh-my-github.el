@@ -1,4 +1,4 @@
-;;; oh-my-github.el --- Oh My GitHub is delightful, open source tool for managing your GitHub -*- lexical-binding: t -*-
+;;; oh-my-github.el --- Oh My GitHub is a delightful, open source tool for managing your GitHub repositories. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 Jiacai Liu
 
@@ -68,6 +68,17 @@
 (defun oh-my-github--get-repo-url ()
   (when-let ((name (oh-my-github--get-full-name)))
     (format "https://github.com/%s" name)))
+
+(defconst oh-my-github-whoami-col-sep ",,,")
+(defconst oh-my-github-whoami-row-sep "\n")
+
+(defun oh-my-github--whoami-insert-row (label value)
+  (insert label
+          oh-my-github-whoami-col-sep
+          (if (numberp value)
+              (number-to-string value)
+            value)
+          oh-my-github-whoami-row-sep))
 
 (defun oh-my-github-browse-repo ()
   "Browse GitHub repository at point."
@@ -182,7 +193,7 @@
 
 ;;;###autoload
 (defun oh-my-github-sync ()
-  "Sync GitHub repositories(owned and starred) into local database.
+  "Sync GitHub repositories(both owned and starred) into local database.
 Note: Emacs maybe hang for a while depending on how many repositories you have."
   (omg-dyn-sync))
 
@@ -206,34 +217,33 @@ Note: Emacs maybe hang for a while depending on how many repositories you have."
 
 ;;;###autoload
 (defun oh-my-github-whoami (&optional username)
-  "Display user information, represented by GitHub personal access token(PAT)."
+  "Display `username' information, or current user represented by GitHub personal access token(PAT)."
   (interactive (list (when current-prefix-arg
                        (read-string "Enter GitHub username: "))))
   (let ((buf (get-buffer-create "*oh-my-github whoami*"))
-        (who (omg-dyn-whoami username))
-        (col-sep ",,,")
-        (row-sep "\n"))
+        (who (omg-dyn-whoami username)))
     (with-current-buffer buf
 	  (read-only-mode -1)
 	  (erase-buffer)
-	  (insert "Created At" col-sep (plist-get who 'created-at) row-sep)
-	  (insert "ID" col-sep (number-to-string (plist-get who 'id)) row-sep)
-	  (insert "Login" col-sep (plist-get who 'login) row-sep)
-	  (insert "Name" col-sep (plist-get who 'name) row-sep)
-	  (insert "Company" col-sep (plist-get who 'company) row-sep)
-	  (insert "Blog" col-sep (plist-get who 'blog) row-sep)
-	  (insert "Location" col-sep (plist-get who 'location) row-sep)
-	  (insert "Email" col-sep (plist-get who 'email) row-sep)
-	  (insert "Hireable" col-sep (number-to-string (plist-get who 'hireable)) row-sep)
-	  (insert "Public Repos" col-sep (number-to-string (plist-get who 'public-gists)) row-sep)
-	  (insert "Public Gists" col-sep (number-to-string (plist-get who 'public-gists)) row-sep)
-	  (insert "Private Repos" col-sep (number-to-string (plist-get who 'private-repos)) row-sep)
-	  (insert "Private Gists" col-sep (number-to-string (plist-get who 'private-gists)) row-sep)
-	  (insert "Followers" col-sep (number-to-string (plist-get who 'followers)) row-sep)
-	  (insert "Following" col-sep (number-to-string (plist-get who 'following)) row-sep)
-	  (insert "Disk Usage" col-sep (number-to-string (plist-get who 'disk-usage)) row-sep)
+	  (oh-my-github--whoami-insert-row "Created At" (plist-get who 'created-at))
+	  (oh-my-github--whoami-insert-row "ID" (plist-get who 'id))
+	  (oh-my-github--whoami-insert-row "Login" (plist-get who 'login))
+	  (oh-my-github--whoami-insert-row "Name" (plist-get who 'name))
+	  (oh-my-github--whoami-insert-row "Company" (plist-get who 'company))
+	  (oh-my-github--whoami-insert-row "Blog" (plist-get who 'blog))
+	  (oh-my-github--whoami-insert-row "Location" (plist-get who 'location))
+	  (oh-my-github--whoami-insert-row "Email" (plist-get who 'email))
+	  (oh-my-github--whoami-insert-row "Hireable" (plist-get who 'hireable))
+	  (oh-my-github--whoami-insert-row "Public Repos" (plist-get who 'public-gists))
+	  (oh-my-github--whoami-insert-row "Public Gists" (plist-get who 'public-gists))
+	  (oh-my-github--whoami-insert-row "Private Repos" (plist-get who 'private-repos))
+	  (oh-my-github--whoami-insert-row "Private Gists" (plist-get who 'private-gists))
+	  (oh-my-github--whoami-insert-row "Followers" (plist-get who 'followers))
+	  (oh-my-github--whoami-insert-row "Following" (plist-get who 'following))
+	  (oh-my-github--whoami-insert-row "Disk Usage" (plist-get who 'disk-usage))
 	  (table-capture (point-min) (point-max)
-				     col-sep row-sep 'left 15)
+				     oh-my-github-whoami-col-sep oh-my-github-whoami-row-sep
+                     'left 15)
 	  (read-only-mode)
 	  (switch-to-buffer buf))))
 

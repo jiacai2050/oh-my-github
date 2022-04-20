@@ -6,7 +6,7 @@
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
 
-Oh My GitHub is delightful, open source tool for managing your GitHub repositories.
+Oh My GitHub is a delightful, open source tool for managing your GitHub repositories.
 
 There are mainly two user interfaces:
 - Emacs. Full-featured
@@ -47,41 +47,10 @@ There are mainly two user interfaces:
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.
-#+begin_example
-+---------------+--------------------+
-|Created At     |2011-09-03T15:26:22Z|
-+---------------+--------------------+
-|ID             |1024025             |
-+---------------+--------------------+
-|Login          |torvalds            |
-+---------------+--------------------+
-|Name           |Linus Torvalds      |
-+---------------+--------------------+
-|Company        |Linux Foundation    |
-+---------------+--------------------+
-|Blog           |                    |
-+---------------+--------------------+
-|Location       |Portland, OR        |
-+---------------+--------------------+
-|Email          |                    |
-+---------------+--------------------+
-|Hireable       |0                   |
-+---------------+--------------------+
-|Public Repos   |0                   |
-+---------------+--------------------+
-|Public Gists   |0                   |
-+---------------+--------------------+
-|Private Repos  |-1                  |
-+---------------+--------------------+
-|Private Gists  |-1                  |
-+---------------+--------------------+
-|Followers      |156351              |
-+---------------+--------------------+
-|Following      |0                   |
-+---------------+--------------------+
-|Disk Usage     |-1                  |
-+---------------+--------------------+
-#+end_example
+
+* Roadmap
+- [ ] Gists
+- [ ] Trending
 
 * Development
 ** Ubuntu
