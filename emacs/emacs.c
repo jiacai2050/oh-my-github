@@ -42,6 +42,14 @@ const char *FEATURE_NAME = "omg-dyn";
     _env_->funcall(_env_, env->intern(env, (fn_name)), _nargs_, _args_);       \
   })
 
+#define lisp_text_button(env, label, ...)                                      \
+  ({                                                                           \
+    emacs_env *_env_ = env;                                                    \
+    lisp_funcall(env, "cons", label,                                           \
+                 lisp_funcall(env, "list", lisp_symbol(env, "face"), Qnil,     \
+                              __VA_ARGS__));                                   \
+  })
+
 #define lisp_integer(env, integer)                                             \
   ({                                                                           \
     emacs_env *_env_ = env;                                                    \
@@ -286,6 +294,147 @@ emacs_value omg_dyn_whoami(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   );
 }
 
+// split string at first newline, and return first part
+// if no newline, return entire input
+static char *split_newline(const char *input) {
+  size_t sep = 0;
+  while (input[sep] != '\n' && input[sep] != '\0') {
+    sep++;
+  }
+  char *buf = malloc(sep + 1);
+  memcpy(buf, input, sep);
+  buf[sep] = '\0';
+
+  return buf;
+}
+
+static emacs_value localtime_format(emacs_env *env, emacs_value iso8601) {
+  return lisp_funcall(env, "format-time-string",
+                      lisp_string(env, "%Y-%m-%d %T"),
+                      lisp_funcall(env, "parse-iso8601-time-string", iso8601));
+}
+
+static char *shorten_sha(const char *sha) {
+  static size_t sha_len = 7;
+  char *buf = malloc(sha_len + 1);
+  memcpy(buf, sha, sha_len);
+  buf[sha_len] = '\0';
+  return buf;
+}
+
+emacs_value omg_dyn_query_commits(emacs_env *env, ptrdiff_t nargs,
+                                  emacs_value *args, void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char full_name = get_string(env, args[0]);
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_auto_commit_list commit_lst = omg_new_commit_list();
+  omg_error err = omg_query_commits(ctx, full_name, &commit_lst);
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  emacs_value commit_vector = lisp_funcall(
+      env, "make-vector", lisp_integer(env, commit_lst.length), Qnil);
+  for (int i = 0; i < commit_lst.length; i++) {
+    omg_commit commit = commit_lst.commit_array[i];
+
+    char id[3];
+    sprintf(id, "%d", i);
+
+    omg_auto_char short_sha = shorten_sha(commit.sha);
+
+    omg_auto_char short_msg = split_newline(commit.message);
+    emacs_value msg_button =
+        lisp_text_button(env, lisp_string(env, short_msg),
+                         // props
+                         lisp_symbol(env, "help-echo"),
+                         lisp_string(env, (char *)commit.message));
+
+    emacs_value row = lisp_funcall(
+        env, "list", lisp_string(env, id),
+        lisp_funcall(
+            env, "vector", lisp_string(env, short_sha), msg_button,
+            lisp_string(env, (char *)commit.author),
+            localtime_format(env, lisp_string(env, (char *)commit.date)), ));
+    lisp_funcall(env, "aset", commit_vector, lisp_integer(env, i), row);
+  }
+
+  return commit_vector;
+}
+
+emacs_value omg_dyn_query_releases(emacs_env *env, ptrdiff_t nargs,
+                                   emacs_value *args, void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char full_name = get_string(env, args[0]);
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_auto_release_list release_lst = omg_new_release_list();
+  omg_error err = omg_query_releases(ctx, full_name, &release_lst);
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  emacs_value release_vector = lisp_funcall(
+      env, "make-vector", lisp_integer(env, release_lst.length), Qnil);
+  for (int i = 0; i < release_lst.length; i++) {
+    omg_release release = release_lst.release_array[i];
+
+    emacs_value asset_vector = lisp_funcall(
+        env, "make-vector", lisp_integer(env, release.asset_length), Qnil);
+    for (int j = 0; j < release.asset_length; j++) {
+      omg_release_asset asset = release.asset_array[j];
+      omg_auto_char readable_size = human_size(asset.size);
+      emacs_value row = lisp_funcall(
+          env, "list", lisp_string(env, asset.name),
+          lisp_funcall(
+              env, "vector",
+              lisp_text_button(env, lisp_string(env, asset.name),
+                               lisp_symbol(env, "raw-url"),
+                               lisp_string(env, asset.download_url)),
+              lisp_string(env, readable_size),
+              lisp_funcall(env, "number-to-string",
+                           lisp_integer(env, asset.download_count)), ));
+      lisp_funcall(env, "aset", asset_vector, lisp_integer(env, j), row);
+    }
+
+    char *name = release.name;
+    if (0 == strcmp(name, "")) {
+      name = release.tag_name;
+    }
+    emacs_value name_button = lisp_text_button(
+        env, lisp_string(env, name),
+        // props
+        lisp_symbol(env, "help-echo"), lisp_string(env, (char *)release.body),
+        // len
+        lisp_symbol(env, "asset-length"),
+        lisp_integer(env, release.asset_length),
+        // files
+        lisp_symbol(env, "asset-files"), asset_vector, );
+
+    char id[10];
+    sprintf(id, "%d", release.id);
+    char *draft = release.draft ? "true" : "false";
+    char *prerelease = release.prerelease ? "true" : "false";
+
+    emacs_value row = lisp_funcall(
+        env, "list", lisp_string(env, id),
+        lisp_funcall(env, "vector",
+                     localtime_format(
+                         env, lisp_string(env, (char *)release.published_at)),
+                     name_button, lisp_string(env, (char *)release.login),
+                     lisp_string(env, (char *)release.tag_name),
+                     lisp_string(env, draft), lisp_string(env, prerelease)));
+    lisp_funcall(env, "aset", release_vector, lisp_integer(env, i), row);
+  }
+
+  return release_vector;
+}
+
 emacs_value omg_dyn_setup(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                           void *data) {
   if (ctx) {
@@ -360,6 +509,14 @@ int emacs_module_init(runtime ert) {
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar"),
                env->make_function(env, 1, 1, omg_dyn_unstar,
                                   "Delete GitHub star", NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-commits"),
+               env->make_function(env, 1, 1, omg_dyn_query_commits,
+                                  "Query commits of a repository", NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-releases"),
+               env->make_function(env, 1, 1, omg_dyn_query_releases,
+                                  "Query releases of a repository", NULL));
 
   lisp_funcall(env, "provide", lisp_symbol(env, FEATURE_NAME));
 
