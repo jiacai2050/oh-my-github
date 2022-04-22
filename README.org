@@ -53,7 +53,7 @@ repos/stars-mode are two main mode, there are three derived modes based those tw
 
 The figure below shows relations among those mode:
 
-[[file:assets/oh-my-github-modes.svg]]
+[[file:assets/omg-modes.svg]]
 
 *** Useful commands
 - =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred) into local database. Emacs maybe hang for a while depending on how many repositories you have.
@@ -63,9 +63,13 @@ The figure below shows relations among those mode:
 - =M-x oh-my-github-whoami= Display GitHub user information.
 
 ** Screenshots
+#+CAPTION: stars mode
 [[file:assets/omg-stars.png]]
+#+CAPTION: commits mode
 [[file:assets/omg-commits.png]]
+#+CAPTION: releases mode
 [[file:assets/omg-releases.png]]
+#+CAPTION: assets modes
 [[file:assets/omg-assets.png]]
 
 * Roadmap
