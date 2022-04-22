@@ -252,6 +252,45 @@ static omg_error omg_request(omg_context ctx, const char *method,
   return NO_ERROR;
 }
 
+static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
+  size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
+  return written;
+}
+
+omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
+  CURL *curl = ctx->curl;
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, GET_METHOD);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+  FILE *file = fopen(filename, "wb");
+  if (!file) {
+    return (omg_error){.code = OMG_CODE_INTERNAL,
+                       .message = "open file failed"};
+  }
+
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+  CURLcode res = curl_easy_perform(curl);
+  fclose(file);
+  if (res != CURLE_OK) {
+    return (omg_error){.code = OMG_CODE_CURL,
+                       .message = curl_easy_strerror(res)};
+  }
+
+  long response_code;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+  if (response_code >= 400) {
+    fprintf(stderr, "Download %s failed with %ld", filename, response_code);
+    return (omg_error){.code = OMG_CODE_CURL,
+                       .message = "download file failed"};
+  }
+
+  return NO_ERROR;
+}
+
 /****************/
 /* GitHub repos */
 /****************/
@@ -745,7 +784,7 @@ omg_error omg_sync_stars(omg_context ctx) {
 }
 
 omg_error omg_unstar(omg_context ctx, size_t repo_id) {
-  const char *sql = "delete from omg_repo where id = ? returning full_name";
+  const char *sql = "select full_name from omg_repo where id = ?";
   auto_sqlite3_stmt stmt = NULL;
   int rc = sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL);
   if (rc) {
@@ -832,7 +871,7 @@ omg_error omg_whoami(omg_context ctx, const char *username, omg_user *out) {
   json_t *msg = json_object_get(resp, "message");
   if (msg) {
     fprintf(stderr, "get whoami(%s) failed. %s", username, json_dumps(resp, 0));
-    if (strcmp(json_string_value(msg), "Not Found")) {
+    if (0 == strcmp(json_string_value(msg), "Not Found")) {
       return (omg_error){.code = OMG_CODE_GITHUB, .message = "User Not Found"};
     }
 
@@ -863,6 +902,168 @@ omg_error omg_whoami(omg_context ctx, const char *username, omg_user *out) {
       .created_at = dup_json_string(resp, "created_at"),
       .disk_usage = disk_usage,
   };
+
+  return NO_ERROR;
+}
+
+omg_commit omg_new_commit() {
+  return (omg_commit){.sha = NULL, .message = NULL};
+}
+
+void omg_free_commit(omg_commit *commit) {
+  if (commit) {
+    FREE_OBJ_FIELD(commit, sha);
+    FREE_OBJ_FIELD(commit, message);
+  }
+}
+
+omg_commit_list omg_new_commit_list() {
+  return (omg_commit_list){.commit_array = NULL, .length = 0};
+}
+
+void omg_free_commit_list(omg_commit_list *commit_lst) {
+  if (commit_lst) {
+    for (int i = 0; i < commit_lst->length; i++) {
+      omg_free_commit(&commit_lst->commit_array[i]);
+    }
+
+    free(commit_lst->commit_array);
+  }
+}
+
+omg_error omg_query_commits(omg_context ctx, const char *full_name, int limit,
+                            omg_commit_list *out) {
+  char url[128];
+  sprintf(url, "%s/repos/%s/commits?per_page=%d", API_ROOT, full_name, limit);
+  json_auto_t *resp = NULL;
+  omg_error err = omg_request(ctx, GET_METHOD, url, NULL, &resp);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  size_t resp_len = json_array_size(resp);
+  omg_commit *commit_array = malloc(sizeof(omg_commit) * resp_len);
+  for (int i = 0; i < resp_len; i++) {
+    json_t *one_commit = json_array_get(resp, i);
+    json_t *commit_info = json_object_get(one_commit, "commit");
+    json_t *author_info = json_object_get(commit_info, "author");
+    commit_array[i] = (omg_commit){
+        .sha = dup_json_string(one_commit, "sha"),
+        .message = dup_json_string(commit_info, "message"),
+        .author = dup_json_string(author_info, "name"),
+        .email = dup_json_string(author_info, "email"),
+        .date = dup_json_string(author_info, "date"),
+    };
+  }
+
+  *out = (omg_commit_list){.commit_array = commit_array, .length = resp_len};
+
+  return NO_ERROR;
+}
+
+// releases
+
+omg_release_asset omg_new_release_asset() {
+  return (omg_release_asset){.name = NULL, .download_url = NULL};
+}
+
+void omg_free_release_asset(omg_release_asset *release_asset) {
+  if (release_asset) {
+    FREE_OBJ_FIELD(release_asset, name);
+    FREE_OBJ_FIELD(release_asset, download_url);
+  }
+}
+
+omg_release omg_new_release() {
+  return (omg_release){
+      .name = NULL,
+      .login = NULL,
+      .tag_name = NULL,
+      .body = NULL,
+      .published_at = NULL,
+      .asset_array = NULL,
+      .asset_length = 0,
+  };
+}
+
+void omg_free_release(omg_release *release) {
+  if (release) {
+    FREE_OBJ_FIELD(release, name);
+    FREE_OBJ_FIELD(release, login);
+    FREE_OBJ_FIELD(release, tag_name);
+    FREE_OBJ_FIELD(release, body);
+    FREE_OBJ_FIELD(release, published_at);
+    if (release->asset_array) {
+      for (int i = 0; i < release->asset_length; i++) {
+        omg_free_release_asset(&release->asset_array[i]);
+      }
+      free(release->asset_array);
+    }
+  }
+}
+
+omg_release_list omg_new_release_list() {
+  return (omg_release_list){.release_array = NULL, .length = 0};
+}
+
+void omg_free_release_list(omg_release_list *release_lst) {
+  if (release_lst) {
+    for (int i = 0; i < release_lst->length; i++) {
+      omg_free_release(&release_lst->release_array[i]);
+    }
+
+    free(release_lst->release_array);
+  }
+}
+
+omg_error omg_query_releases(omg_context ctx, const char *full_name, int limit,
+                             omg_release_list *out) {
+  char url[128];
+  sprintf(url, "%s/repos/%s/releases?per_page=%d", API_ROOT, full_name, limit);
+  json_auto_t *resp = NULL;
+  omg_error err = omg_request(ctx, GET_METHOD, url, NULL, &resp);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  size_t resp_len = json_array_size(resp);
+  omg_release *release_array = malloc(sizeof(omg_release) * resp_len);
+  for (int i = 0; i < resp_len; i++) {
+    json_t *one_release = json_array_get(resp, i);
+    json_t *asset_info = json_object_get(one_release, "assets");
+    json_t *author_info = json_object_get(one_release, "author");
+
+    size_t asset_length = json_array_size(asset_info);
+    omg_release_asset *asset_array =
+        malloc(sizeof(omg_release_asset) * asset_length);
+    for (int j = 0; j < asset_length; j++) {
+      json_t *one_asset = json_array_get(asset_info, j);
+      asset_array[j] = (omg_release_asset){
+          .id = json_integer_value(json_object_get(one_asset, "id")),
+          .name = dup_json_string(one_asset, "name"),
+          .size = json_integer_value(json_object_get(one_asset, "size")),
+          .download_count =
+              json_integer_value(json_object_get(one_asset, "download_count")),
+          .download_url = dup_json_string(one_asset, "browser_download_url"),
+      };
+    }
+
+    release_array[i] = (omg_release){
+        .id = json_integer_value(json_object_get(one_release, "id")),
+        .login = dup_json_string(author_info, "login"),
+        .name = dup_json_string(one_release, "name"),
+        .tag_name = dup_json_string(one_release, "tag_name"),
+        .body = dup_json_string(one_release, "body"),
+        .draft = json_boolean_value(json_object_get(one_release, "draft")),
+        .prerelease =
+            json_boolean_value(json_object_get(one_release, "prerelease")),
+        .published_at = dup_json_string(one_release, "published_at"),
+        .asset_array = asset_array,
+        .asset_length = asset_length,
+    };
+  }
+
+  *out = (omg_release_list){.release_array = release_array, .length = resp_len};
 
   return NO_ERROR;
 }

@@ -11,11 +11,11 @@ Oh My GitHub is a delightful, open source tool for managing your GitHub reposito
 There are mainly two user interfaces:
 - Emacs. Full-featured
   - *Sync* repositories(owned and starred) list into local database
-  - *Search* by keyword or programming language
+  - *Query repositories* by keyword or programming language
   - *Unstar*
-
-[[file:screenshots/stars-list.png]]
-
+  - *Query latest commits*
+  - *Query latest releases*
+  - *Query release asset files*
 - CLI, TBD
   - *Sync*
 
@@ -42,11 +42,35 @@ There are mainly two user interfaces:
 #+END_SRC
 
 ** Usage
+There are five major-modes in Oh My GitHub:
+- =oh-my-github-repos-mode=, used for owned repositories
+- =oh-my-github-stars-mode=, used for starred repositories
+
+repos/stars-mode are two main mode, there are three derived modes based those two:
+- =oh-my-github-commits-mode=, used for display commits of a repository
+- =oh-my-github-releases-mode=, used for display releases of a repository
+- =oh-my-github-assets-mode=, used for display asset files of a release
+
+The figure below shows relations among those mode:
+
+[[file:assets/omg-modes.svg]]
+
+*** Useful commands
 - =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred) into local database. Emacs maybe hang for a while depending on how many repositories you have.
   - Note: this command only need to be executed once.
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.
+
+** Screenshots
+#+CAPTION: stars mode
+[[file:assets/omg-stars.png]]
+#+CAPTION: commits mode
+[[file:assets/omg-commits.png]]
+#+CAPTION: releases mode
+[[file:assets/omg-releases.png]]
+#+CAPTION: assets modes
+[[file:assets/omg-assets.png]]
 
 * Roadmap
 - [ ] Gists

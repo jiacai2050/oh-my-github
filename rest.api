@@ -36,8 +36,17 @@ GET https://gh-trending-api.herokuapp.com/repositories/rust?since=weekly
 GET :root/repos/antirez/kilo
 :headers
 #
-GET :root/repos/jiacai2050/sicp
-
+GET :root/repos/antirez/kilo/commits/69c3ce609d1e8df3956cba6db3d296a7cf3af3de
+:headers
+#
+GET :root/repos/jiacai2050/oh-my-github/releases
+:headers
+#
+GET :root/repos/rust-lang/rust-analyzer/releases/64910715
+:headers
+#
+GET :root/repos/jiacai2050/sicp/releases
+:headers
 #
 GET :root/user
 :headers

@@ -32,6 +32,8 @@ omg_error omg_setup_context(const char *path, const char *github_token,
 void omg_free_context(omg_context *ctx);
 #define omg_auto_context omg_context __attribute__((cleanup(omg_free_context)))
 
+omg_error omg_download(omg_context ctx, const char *url, const char *filename);
+
 // repo
 typedef struct omg_repo {
   int id;
@@ -53,7 +55,7 @@ omg_repo omg_new_repo();
 void omg_free_repo(omg_repo *repo);
 #define omg_auto_repo omg_repo __attribute__((cleanup(omg_free_repo)))
 
-typedef struct omg_repo_list {
+typedef struct {
   omg_repo *repo_array;
   size_t length;
 } omg_repo_list;
@@ -118,4 +120,74 @@ void omg_free_user(omg_user *);
 #define omg_auto_user omg_user __attribute__((cleanup(omg_free_user)))
 
 omg_error omg_whoami(omg_context ctx, const char *username, omg_user *);
+
+typedef struct {
+  const char *sha;
+  const char *message;
+  const char *author;
+  const char *email;
+  const char *date;
+} omg_commit;
+
+omg_commit omg_new_commit();
+void omg_free_commit(omg_commit *commit);
+#define omg_auto_repo_commit                                                   \
+  omg_repo_commit __attribute__((cleanup(omg_free_commit)))
+
+typedef struct {
+  omg_commit *commit_array;
+  size_t length;
+} omg_commit_list;
+
+omg_commit_list omg_new_commit_list();
+void omg_free_commit_list(omg_commit_list *);
+#define omg_auto_commit_list                                                   \
+  omg_commit_list __attribute__((cleanup(omg_free_commit_list)))
+
+omg_error omg_query_commits(omg_context, const char *full_name, int limit,
+                            omg_commit_list *);
+
+typedef struct {
+  int id;
+  char *name;
+  int size;
+  int download_count;
+  char *download_url;
+} omg_release_asset;
+
+omg_release_asset omg_new_release_asset();
+void omg_free_release_asset(omg_release_asset *release_asset);
+#define omg_auto_repo_release_asset                                            \
+  omg_repo_release_asset __attribute__((cleanup(omg_free_release_asset)))
+
+typedef struct {
+  int id;
+  char *name;
+  char *login;
+  char *tag_name;
+  char *body;
+  bool draft;
+  bool prerelease;
+  char *published_at;
+  omg_release_asset *asset_array;
+  int asset_length;
+} omg_release;
+
+omg_release omg_new_release();
+void omg_free_release(omg_release *release);
+#define omg_auto_repo_release                                                  \
+  omg_repo_release __attribute__((cleanup(omg_free_release)))
+
+typedef struct {
+  omg_release *release_array;
+  size_t length;
+} omg_release_list;
+
+omg_release_list omg_new_release_list();
+void omg_free_release_list(omg_release_list *);
+#define omg_auto_release_list                                                  \
+  omg_release_list __attribute__((cleanup(omg_free_release_list)))
+
+omg_error omg_query_releases(omg_context, const char *full_name, int limit,
+                             omg_release_list *);
 #endif

@@ -47,18 +47,46 @@
   :group 'oh-my-github
   :type 'string)
 
+(defcustom oh-my-github-commit-query-limit 50
+  "Limit used when query latest commits (max 100)."
+  :group 'oh-my-github
+  :type 'integer)
+
+(defcustom oh-my-github-release-query-limit 50
+  "Limit used when query latest releases (max 100)."
+  :group 'oh-my-github
+  :type 'integer)
+
+(defcustom oh-my-github-download-directory eww-download-directory
+  "Directory where asset files will downloaded."
+  :group 'oh-my-github
+  :type '(choice directory function))
+
 (defvar-local oh-my-github-query-keyword ""
-  "The case-insensitive keyword used when query")
+  "The case-insensitive keyword used when query repos.")
 
 (defvar-local oh-my-github-query-language ""
-  "The case-insensitive programming language used when query")
+  "The case-insensitive programming language used when query repos.")
 
-(defun oh-my-github--search-stars ()
+(defvar-local oh-my-github-query-repo-full-name ""
+  "The repository full-name used when query commits/releases.")
+
+(defun oh-my-github--query-stars ()
   (seq-into (omg-dyn-query-stars oh-my-github-query-keyword oh-my-github-query-language)
             'list))
 
-(defun oh-my-github--search-repos ()
+(defun oh-my-github--query-repos ()
   (seq-into (omg-dyn-query-repos oh-my-github-query-keyword oh-my-github-query-language)
+            'list))
+
+(defun oh-my-github--query-commits ()
+  (seq-into (omg-dyn-query-commits oh-my-github-query-repo-full-name
+                                   oh-my-github-commit-query-limit)
+            'list))
+
+(defun oh-my-github--query-releases ()
+  (seq-into (omg-dyn-query-releases oh-my-github-query-repo-full-name
+                                    oh-my-github-release-query-limit)
             'list))
 
 (defun oh-my-github--get-full-name()
@@ -92,24 +120,26 @@
   (interactive)
   (if-let ((url (oh-my-github--get-repo-url)))
       (progn
-        (message url)
-        (kill-new url))
+        (kill-new url)
+        (message "Copied %s" url))
     (user-error "There is no repository at point")))
 
 (defun oh-my-github-unstar ()
   "Unstar repository at point."
   (interactive)
-  (if-let ((entry (tabulated-list-delete-entry)))
-      (progn
-        (message "Unstar %s..."  (elt (cadr entry) 1)) ;; full_name
-        (omg-dyn-unstar (string-to-number (car entry))))
+  (if-let ((entry (tabulated-list-get-entry))
+           (full-name (elt entry 1)))
+      (when (yes-or-no-p (format "Are you really want to unstar %s?" full-name))
+        (omg-dyn-unstar (string-to-number (tabulated-list-get-id)))
+        (tabulated-list-delete-entry)
+        (message "Unstarred %s" full-name))
     (user-error "There is no repository at point")))
 
 (defun oh-my-github-tabulated-list-revert (&optional revert)
   (setq-local oh-my-github-query-keyword "")
   (setq-local oh-my-github-query-language ""))
 
-(defun oh-my-github-search (keyword language)
+(defun oh-my-github-query-repos (keyword language)
   (interactive (list (read-string (format "Keyword(%s): " oh-my-github-query-keyword)
                                   nil nil oh-my-github-query-keyword)
                      (read-string (format "Programming Language(%s): " oh-my-github-query-language)
@@ -134,7 +164,7 @@
        (string-to-number (plist-get (cdr size-btn-x) 'help-echo))
        (string-to-number (plist-get (cdr size-btn-y) 'help-echo))))))
 
-(defun oh-my-github--init-tabulated-list (first-column sort-key search-entries-fn)
+(defun oh-my-github--init-repos-tabulated-list (first-column sort-key query-entries-fn)
   (setq tabulated-list-format `[,first-column
                                 ("Repository" 25 t)
                                 ("Language" 8 t)
@@ -146,7 +176,7 @@
 
         tabulated-list-padding 2
         tabulated-list-sort-key sort-key
-        tabulated-list-entries search-entries-fn)
+        tabulated-list-entries query-entries-fn)
 
   (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
   (tabulated-list-init-header))
@@ -156,27 +186,208 @@
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "RET") 'oh-my-github-browse-repo)
     (define-key map (kbd "w") 'oh-my-github-copy-repo-url)
-    (define-key map (kbd "s") 'oh-my-github-search)
+    (define-key map (kbd "s") 'oh-my-github-query-repos)
+    (define-key map (kbd "c") 'oh-my-github-query-commits)
+    (define-key map (kbd "r") 'oh-my-github-query-releases)
     (define-key map (kbd "s-u") 'tabulated-list-revert)
     map)
   "Local keymap for oh-my-github-repos mode buffers.")
 
 (define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github repos" "Manage GitHub owned repositories"
-  (oh-my-github--init-tabulated-list '("CreatedAt" 20 t)
+  (oh-my-github--init-repos-tabulated-list '("CreatedAt" 20 t)
                                      (cons "CreatedAt" t)
-                                     'oh-my-github--search-repos))
+                                     'oh-my-github--query-repos))
 
 (defvar oh-my-github-stars-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map oh-my-github-repos-mode-map)
-    (define-key map (kbd "d") 'oh-my-github-unstar)
+    (define-key map (kbd "u") 'oh-my-github-unstar)
     map)
   "Local keymap for oh-my-github-stars mode buffers.")
 
 (define-derived-mode oh-my-github-stars-mode oh-my-github-repos-mode "oh-my-github stars" "Manage GitHub starred repositories"
-  (oh-my-github--init-tabulated-list '("StarredAt" 20 t)
+  (oh-my-github--init-repos-tabulated-list '("StarredAt" 20 t)
                                      (cons "StarredAt" t)
-                                     'oh-my-github--search-stars))
+                                     'oh-my-github--query-stars))
+
+(defun oh-my-github--get-commit-sha ()
+  (when-let ((entry (tabulated-list-get-entry)))
+    (aref entry 0)))
+
+(defun oh-my-github--get-commit-url (&optional patch)
+  (when-let* ((sha (oh-my-github--get-commit-sha)))
+    (concat
+     (format "https://github.com/%s/commit/%s"
+             oh-my-github-query-repo-full-name
+             sha)
+     (when patch ".patch"))))
+
+(defun oh-my-github-browse-commit ()
+  "Browse commit at point."
+  (interactive)
+  (if-let* ((url (oh-my-github--get-commit-url t)))
+      (browse-url url)
+    (user-error "There is no commit at point")))
+
+(defun oh-my-github-copy-commit-url ()
+  "Copy commit url at point."
+  (interactive)
+  (if-let* ((url (oh-my-github--get-commit-url)))
+      (progn
+        (kill-new url)
+        (message "Copied %s" url))
+    (user-error "There is no commit at point")))
+
+(defun oh-my-github-query-commits (full-name)
+  (interactive (list (if current-prefix-arg
+                         (read-string (format "Repository name(%s): " oh-my-github-query-repo-full-name)
+                                      nil nil oh-my-github-query-repo-full-name)
+                       (oh-my-github--get-full-name))))
+  (with-current-buffer (get-buffer-create (format "*oh-my-github %s commits*" full-name))
+    (oh-my-github-commits-mode)
+    (setq-local oh-my-github-query-repo-full-name full-name)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+(defvar oh-my-github-commits-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map (kbd "RET") 'oh-my-github-browse-commit)
+    (define-key map (kbd "w") 'oh-my-github-copy-commit-url)
+    map)
+  "Local keymap for oh-my-github-commits-mode buffers.")
+
+(define-derived-mode oh-my-github-commits-mode tabulated-list-mode "oh-my-github commits" "Display Commits of GitHub repository"
+  (setq tabulated-list-format [("Commit" 8)
+                               ("Message" 70)
+                               ("Author" 20 t)
+                               ("Date" 20 t)]
+
+        tabulated-list-padding 2
+        tabulated-list-sort-key (cons "Date" t)
+        tabulated-list-entries 'oh-my-github--query-commits)
+  ;; (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
+  (tabulated-list-init-header))
+
+(defun oh-my-github-query-releases (full-name)
+  (interactive (list (if current-prefix-arg
+                         (read-string (format "Repository name(%s): " oh-my-github-query-repo-full-name)
+                                      nil nil oh-my-github-query-repo-full-name)
+                       (oh-my-github--get-full-name))))
+  (with-current-buffer (get-buffer-create (format "*oh-my-github %s releases*" full-name))
+    (oh-my-github-releases-mode)
+    (setq-local oh-my-github-query-repo-full-name full-name)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+(defun oh-my-github--get-release-name ()
+  (when-let ((entry (tabulated-list-get-entry)))
+    (aref entry 1)))
+
+(defun oh-my-github--get-release-tag ()
+  (when-let ((entry (tabulated-list-get-entry)))
+    (aref entry 3)))
+
+(defun oh-my-github--get-release-url ()
+  (when-let ((tag (oh-my-github--get-release-tag)))
+    (format "https://github.com/%s/releases/%s"
+            oh-my-github-query-repo-full-name
+            tag)))
+
+(defun oh-my-github-browse-release ()
+  "Browse release at point."
+  (interactive)
+  (if-let* ((url (oh-my-github--get-release-url)))
+      (browse-url url)
+    (user-error "There is no release at point")))
+
+(defun oh-my-github-copy-release-url ()
+  "Browse release at point."
+  (interactive)
+  (if-let* ((url (oh-my-github--get-release-url)))
+      (progn
+        (kill-new url)
+        (message "Copied %s" url))
+    (user-error "There is no release at point")))
+
+(defvar oh-my-github-releases-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map (kbd "b") 'oh-my-github-browse-release)
+    (define-key map (kbd "w") 'oh-my-github-copy-release-url)
+    (define-key map (kbd "RET") 'oh-my-github-query-assets)
+    map)
+  "Local keymap for oh-my-github-releases-mode buffers.")
+
+(define-derived-mode oh-my-github-releases-mode tabulated-list-mode "oh-my-github releases" "Display Releases of GitHub repository"
+  (setq tabulated-list-format [("PublishedAt" 20 t)
+                               ("Name" 60)
+                               ("Author" 20 t)
+                               ("Tag" 15 t)
+                               ("Draft" 6)
+                               ("Prerelease" 6)]
+
+        tabulated-list-padding 2
+        tabulated-list-sort-key (cons "PublishedAt" t)
+        tabulated-list-entries 'oh-my-github--query-releases)
+  (tabulated-list-init-header))
+
+(defun oh-my-github-query-assets ()
+  (interactive)
+  (when-let* ((name (oh-my-github--get-release-name))
+              (label (car name))
+              (files (plist-get (cdr name) 'asset-files)))
+    (with-current-buffer (get-buffer-create (format "*oh-my-github %s assets*" label))
+      (oh-my-github-assets-mode)
+      (setq tabulated-list-entries (seq-into files 'list))
+      (tabulated-list-print t)
+      (switch-to-buffer (current-buffer)))))
+
+(defun oh-my-github--get-asset-name ()
+  (when-let ((entry (tabulated-list-get-entry)))
+    (aref entry 0)))
+
+(defun oh-my-github-copy-asset-url ()
+  (interactive)
+  (if-let* ((name (oh-my-github--get-asset-name))
+            (raw-url (plist-get (cdr name) 'raw-url)))
+      (progn
+        (kill-new raw-url)
+        (message "Copied %s" raw-url))
+    (user-error "There is no asset at point")))
+
+(defun oh-my-github-download-asset ()
+  "Browse release at point."
+  (interactive)
+  (if-let* ((name (oh-my-github--get-asset-name))
+            (label (car name))
+            (raw-url (plist-get (cdr name) 'raw-url))
+            (dir (if (stringp oh-my-github-download-directory)
+                     oh-my-github-download-directory
+                   (funcall eww-download-directory)))
+            (dest (expand-file-name label dir)))
+      (when (yes-or-no-p (format "Download %s to %s\nMaybe hang a while for large file, continue?" raw-url dest))
+        (when (or (not (file-exists-p dest))
+                  (yes-or-no-p (format "%s exists, overwrite? " dest)))
+          (omg-dyn-download raw-url dest)
+          (message "Downloaded %s" dest)))
+    (user-error "There is no asset at point")))
+
+(defvar oh-my-github-assets-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map (kbd "w") 'oh-my-github-copy-asset-url)
+    (define-key map (kbd "RET") 'oh-my-github-download-asset)
+    map)
+  "Local keymap for oh-my-github-assets-mode buffers.")
+
+(define-derived-mode oh-my-github-assets-mode tabulated-list-mode "oh-my-github assets" "Display Assets of GitHub repository"
+  (setq tabulated-list-format [("Name" 40 t)
+                               ("Size" 8)
+                               ("Download Count" 5 t)]
+        tabulated-list-padding 2
+        tabulated-list-sort-key (cons "Name" t))
+  (tabulated-list-init-header))
 
 ;;;###autoload
 (defun oh-my-github-setup()
