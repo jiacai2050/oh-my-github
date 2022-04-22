@@ -14,7 +14,7 @@ There are mainly two user interfaces:
   - *Search* by keyword or programming language
   - *Unstar*
 
-[[file:screenshots/stars-list.png]]
+[[file:assets/stars-list.png]]
 
 - CLI, TBD
   - *Sync*
@@ -42,7 +42,6 @@ There are mainly two user interfaces:
 #+END_SRC
 
 ** Usage
-[[file:screenshots/oh-my-github-modes.svg]]
 There are five major-modes in Oh My GitHub:
 - =oh-my-github-repos-mode=, used for owned repositories
 - =oh-my-github-stars-mode=, used for starred repositories
@@ -51,6 +50,10 @@ repos/stars-mode are two main mode, there are three derived modes based those tw
 - =oh-my-github-commits-mode=, used for display commits of a repository
 - =oh-my-github-releases-mode=, used for display releases of a repository
 - =oh-my-github-assets-mode=, used for display asset files of a release
+
+The figure below shows relations among those mode:
+
+[[file:assets/oh-my-github-modes.svg]]
 
 *** Useful commands
 - =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred) into local database. Emacs maybe hang for a while depending on how many repositories you have.
