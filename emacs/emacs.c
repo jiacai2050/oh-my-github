@@ -326,10 +326,11 @@ emacs_value omg_dyn_query_commits(emacs_env *env, ptrdiff_t nargs,
                                   emacs_value *args, void *data) {
   ENSURE_SETUP(env);
   omg_auto_char full_name = get_string(env, args[0]);
+  int limit = env->extract_integer(env, args[1]);
   ENSURE_NONLOCAL_EXIT(env);
 
   omg_auto_commit_list commit_lst = omg_new_commit_list();
-  omg_error err = omg_query_commits(ctx, full_name, &commit_lst);
+  omg_error err = omg_query_commits(ctx, full_name, limit, &commit_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
@@ -369,10 +370,11 @@ emacs_value omg_dyn_query_releases(emacs_env *env, ptrdiff_t nargs,
                                    emacs_value *args, void *data) {
   ENSURE_SETUP(env);
   omg_auto_char full_name = get_string(env, args[0]);
+  int limit = env->extract_integer(env, args[1]);
   ENSURE_NONLOCAL_EXIT(env);
 
   omg_auto_release_list release_lst = omg_new_release_list();
-  omg_error err = omg_query_releases(ctx, full_name, &release_lst);
+  omg_error err = omg_query_releases(ctx, full_name, limit, &release_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
@@ -525,11 +527,11 @@ int emacs_module_init(runtime ert) {
                                   "Delete GitHub star", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-commits"),
-               env->make_function(env, 1, 1, omg_dyn_query_commits,
+               env->make_function(env, 2, 2, omg_dyn_query_commits,
                                   "Query commits of a repository", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-releases"),
-               env->make_function(env, 1, 1, omg_dyn_query_releases,
+               env->make_function(env, 2, 2, omg_dyn_query_releases,
                                   "Query releases of a repository", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-download"),

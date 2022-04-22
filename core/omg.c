@@ -282,8 +282,6 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
 
   long response_code;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-  static int no_content = 204;
-  static int not_modified = 304;
   if (response_code >= 400) {
     fprintf(stderr, "Download %s failed with %ld", filename, response_code);
     return (omg_error){.code = OMG_CODE_CURL,
@@ -933,11 +931,10 @@ void omg_free_commit_list(omg_commit_list *commit_lst) {
   }
 }
 
-omg_error omg_query_commits(omg_context ctx, const char *full_name,
+omg_error omg_query_commits(omg_context ctx, const char *full_name, int limit,
                             omg_commit_list *out) {
   char url[128];
-  sprintf(url, "%s/repos/%s/commits?per_page=%zu", API_ROOT, full_name,
-          PER_PAGE);
+  sprintf(url, "%s/repos/%s/commits?per_page=%d", API_ROOT, full_name, limit);
   json_auto_t *resp = NULL;
   omg_error err = omg_request(ctx, GET_METHOD, url, NULL, &resp);
   if (!is_ok(err)) {
@@ -1019,11 +1016,10 @@ void omg_free_release_list(omg_release_list *release_lst) {
   }
 }
 
-omg_error omg_query_releases(omg_context ctx, const char *full_name,
+omg_error omg_query_releases(omg_context ctx, const char *full_name, int limit,
                              omg_release_list *out) {
   char url[128];
-  sprintf(url, "%s/repos/%s/releases?per_page=%zu", API_ROOT, full_name,
-          PER_PAGE);
+  sprintf(url, "%s/repos/%s/releases?per_page=%d", API_ROOT, full_name, limit);
   json_auto_t *resp = NULL;
   omg_error err = omg_request(ctx, GET_METHOD, url, NULL, &resp);
   if (!is_ok(err)) {

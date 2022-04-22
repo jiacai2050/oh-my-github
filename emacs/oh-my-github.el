@@ -47,10 +47,20 @@
   :group 'oh-my-github
   :type 'string)
 
-(defcustom oh-my-github-download-directory (erc--download-directory)
+(defcustom oh-my-github-commit-query-limit 50
+  "Limit used when query latest commits (max 100)."
+  :group 'oh-my-github
+  :type 'integer)
+
+(defcustom oh-my-github-release-query-limit 50
+  "Limit used when query latest releases (max 100)."
+  :group 'oh-my-github
+  :type 'integer)
+
+(defcustom oh-my-github-download-directory eww-download-directory
   "Directory where asset files will downloaded."
   :group 'oh-my-github
-  :type 'string)
+  :type '(choice directory function))
 
 (defvar-local oh-my-github-query-keyword ""
   "The case-insensitive keyword used when query repos.")
@@ -70,11 +80,13 @@
             'list))
 
 (defun oh-my-github--query-commits ()
-  (seq-into (omg-dyn-query-commits oh-my-github-query-repo-full-name)
+  (seq-into (omg-dyn-query-commits oh-my-github-query-repo-full-name
+                                   oh-my-github-commit-query-limit)
             'list))
 
 (defun oh-my-github--query-releases ()
-  (seq-into (omg-dyn-query-releases oh-my-github-query-repo-full-name)
+  (seq-into (omg-dyn-query-releases oh-my-github-query-repo-full-name
+                                    oh-my-github-release-query-limit)
             'list))
 
 (defun oh-my-github--get-full-name()
@@ -348,7 +360,10 @@
   (if-let* ((name (oh-my-github--get-asset-name))
             (label (car name))
             (raw-url (plist-get (cdr name) 'raw-url))
-            (dest (expand-file-name label oh-my-github-download-directory)))
+            (dir (if (stringp oh-my-github-download-directory)
+                     oh-my-github-download-directory
+                   (funcall eww-download-directory)))
+            (dest (expand-file-name label dir)))
       (when (yes-or-no-p (format "Download %s to %s\nMaybe hang a while for large file, continue?" raw-url dest))
         (when (or (not (file-exists-p dest))
                   (yes-or-no-p (format "%s exists, overwrite? " dest)))

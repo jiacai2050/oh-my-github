@@ -11,8 +11,11 @@ Oh My GitHub is a delightful, open source tool for managing your GitHub reposito
 There are mainly two user interfaces:
 - Emacs. Full-featured
   - *Sync* repositories(owned and starred) list into local database
-  - *Search* by keyword or programming language
+  - *Query repositories* by keyword or programming language
   - *Unstar*
+  - *Query latest commits*
+  - *Query latest releases*
+  - *Query release asset files*
 
 [[file:assets/stars-list.png]]
 

@@ -144,7 +144,7 @@ void omg_free_commit_list(omg_commit_list *);
 #define omg_auto_commit_list                                                   \
   omg_commit_list __attribute__((cleanup(omg_free_commit_list)))
 
-omg_error omg_query_commits(omg_context, const char *full_name,
+omg_error omg_query_commits(omg_context, const char *full_name, int limit,
                             omg_commit_list *);
 
 typedef struct {
@@ -188,6 +188,6 @@ void omg_free_release_list(omg_release_list *);
 #define omg_auto_release_list                                                  \
   omg_release_list __attribute__((cleanup(omg_free_release_list)))
 
-omg_error omg_query_releases(omg_context, const char *full_name,
+omg_error omg_query_releases(omg_context, const char *full_name, int limit,
                              omg_release_list *);
 #endif
