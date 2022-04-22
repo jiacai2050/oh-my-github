@@ -784,7 +784,7 @@ omg_error omg_sync_stars(omg_context ctx) {
 }
 
 omg_error omg_unstar(omg_context ctx, size_t repo_id) {
-  const char *sql = "delete from omg_repo where id = ? returning full_name";
+  const char *sql = "select full_name from omg_repo where id = ?";
   auto_sqlite3_stmt stmt = NULL;
   int rc = sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL);
   if (rc) {

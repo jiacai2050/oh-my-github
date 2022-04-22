@@ -127,10 +127,12 @@
 (defun oh-my-github-unstar ()
   "Unstar repository at point."
   (interactive)
-  (if-let ((entry (tabulated-list-delete-entry)))
-      (progn
-        (message "Unstar %s..."  (elt (cadr entry) 1)) ;; full_name
-        (omg-dyn-unstar (string-to-number (car entry))))
+  (if-let ((entry (tabulated-list-get-entry))
+           (full-name (elt entry 1)))
+      (when (yes-or-no-p (format "Are you really want to unstar %s?" full-name))
+        (omg-dyn-unstar (string-to-number (tabulated-list-get-id)))
+        (tabulated-list-delete-entry)
+        (message "Unstarred %s" full-name))
     (user-error "There is no repository at point")))
 
 (defun oh-my-github-tabulated-list-revert (&optional revert)
@@ -199,7 +201,7 @@
 (defvar oh-my-github-stars-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map oh-my-github-repos-mode-map)
-    (define-key map (kbd "d") 'oh-my-github-unstar)
+    (define-key map (kbd "u") 'oh-my-github-unstar)
     map)
   "Local keymap for oh-my-github-stars mode buffers.")
 
