@@ -16,9 +16,6 @@ There are mainly two user interfaces:
   - *Query latest commits*
   - *Query latest releases*
   - *Query release asset files*
-
-[[file:assets/stars-list.png]]
-
 - CLI, TBD
   - *Sync*
 
@@ -64,6 +61,12 @@ The figure below shows relations among those mode:
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.
+
+** Screenshots
+[[file:assets/omg-stars.png]]
+[[file:assets/omg-commits.png]]
+[[file:assets/omg-releases.png]]
+[[file:assets/omg-assets.png]]
 
 * Roadmap
 - [ ] Gists
