@@ -42,6 +42,17 @@ There are mainly two user interfaces:
 #+END_SRC
 
 ** Usage
+[[file:screenshots/oh-my-github-modes.svg]]
+There are five major-modes in Oh My GitHub:
+- =oh-my-github-repos-mode=, used for owned repositories
+- =oh-my-github-stars-mode=, used for starred repositories
+
+repos/stars-mode are two main mode, there are three derived modes based those two:
+- =oh-my-github-commits-mode=, used for display commits of a repository
+- =oh-my-github-releases-mode=, used for display releases of a repository
+- =oh-my-github-assets-mode=, used for display asset files of a release
+
+*** Useful commands
 - =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred) into local database. Emacs maybe hang for a while depending on how many repositories you have.
   - Note: this command only need to be executed once.
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.

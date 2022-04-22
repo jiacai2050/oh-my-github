@@ -403,7 +403,7 @@ emacs_value omg_dyn_query_releases(emacs_env *env, ptrdiff_t nargs,
     }
 
     char *name = release.name;
-    if (0 == strcmp(name, "")) {
+    if (!name || 0 == strcmp(name, "")) {
       name = release.tag_name;
     }
     emacs_value name_button = lisp_text_button(
@@ -433,6 +433,20 @@ emacs_value omg_dyn_query_releases(emacs_env *env, ptrdiff_t nargs,
   }
 
   return release_vector;
+}
+
+emacs_value omg_dyn_download(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                             void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char url = get_string(env, args[0]);
+  omg_auto_char filename = get_string(env, args[1]);
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_error err = omg_download(ctx, url, filename);
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+  return Qt;
 }
 
 emacs_value omg_dyn_setup(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
@@ -517,6 +531,10 @@ int emacs_module_init(runtime ert) {
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-releases"),
                env->make_function(env, 1, 1, omg_dyn_query_releases,
                                   "Query releases of a repository", NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-download"),
+               env->make_function(env, 2, 2, omg_dyn_download,
+                                  "Download file given a asset raw-url", NULL));
 
   lisp_funcall(env, "provide", lisp_symbol(env, FEATURE_NAME));
 

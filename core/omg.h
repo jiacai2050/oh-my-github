@@ -32,6 +32,8 @@ omg_error omg_setup_context(const char *path, const char *github_token,
 void omg_free_context(omg_context *ctx);
 #define omg_auto_context omg_context __attribute__((cleanup(omg_free_context)))
 
+omg_error omg_download(omg_context ctx, const char *url, const char *filename);
+
 // repo
 typedef struct omg_repo {
   int id;

@@ -252,6 +252,47 @@ static omg_error omg_request(omg_context ctx, const char *method,
   return NO_ERROR;
 }
 
+static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
+  size_t written = fwrite(ptr, size, nmemb, (FILE *)stream);
+  return written;
+}
+
+omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
+  CURL *curl = ctx->curl;
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, GET_METHOD);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+  FILE *file = fopen(filename, "wb");
+  if (!file) {
+    return (omg_error){.code = OMG_CODE_INTERNAL,
+                       .message = "open file failed"};
+  }
+
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+  CURLcode res = curl_easy_perform(curl);
+  fclose(file);
+  if (res != CURLE_OK) {
+    return (omg_error){.code = OMG_CODE_CURL,
+                       .message = curl_easy_strerror(res)};
+  }
+
+  long response_code;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+  static int no_content = 204;
+  static int not_modified = 304;
+  if (response_code >= 400) {
+    fprintf(stderr, "Download %s failed with %ld", filename, response_code);
+    return (omg_error){.code = OMG_CODE_CURL,
+                       .message = "download file failed"};
+  }
+
+  return NO_ERROR;
+}
+
 /****************/
 /* GitHub repos */
 /****************/
