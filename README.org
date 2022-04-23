@@ -15,7 +15,7 @@ There are mainly two user interfaces:
   - *Unstar*
   - *Query latest commits*
   - *Query latest releases*
-  - *Query release asset files*
+  - *Download release asset files*
 - CLI, TBD
   - *Sync*
 
@@ -28,17 +28,20 @@ There are mainly two user interfaces:
 * Emacs Interface
 ** Install
 1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][oh-my-github.el]]
-2. Download required shared object from [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
+2. Download required shared object, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
+   - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
+   - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencise]]
 3. Put =el= and =so= files under =load-path=
-4. Generate Github personal access tokens at https://github.com/settings/tokens. You can check authentication with =M-x oh-my-github-whoami==.
+4. Generate Github personal access tokens at https://github.com/settings/tokens. You can check authentication with =M-x oh-my-github-whoami=
+5. Set =oh-my-github-pat= and execute =oh-my-github-setup= before use.
 
+Here is a =use-package= config demo:
 #+BEGIN_SRC emacs-lisp
 (use-package oh-my-github
   :load-path "/path/to/oh-my-github/emacs"
   :config
   (setq oh-my-github-pat (getenv "GITHUB_TOKEN"))
   (oh-my-github-setup))
-
 #+END_SRC
 
 ** Usage

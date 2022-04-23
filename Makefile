@@ -48,5 +48,8 @@ memcheck:
 $(SO_FILE): $(OBJECTS)
 	$(CC) -O3 -dynamiclib $(OBJECTS) $(LDFLAGS) -o $(SO_FILE)
 
+emacs-dyn: $(SO_FILE)
+	@echo "Emacs dynamic module saved to $(SO_FILE)"
+
 clean:
 	rm -f $(CLI) $(SO_FILE) $(OBJECTS)

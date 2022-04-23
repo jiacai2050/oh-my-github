@@ -1,0 +1,61 @@
+#+TITLE: Changelog
+#+DATE: 2022-04-23T10:20:54+0800
+#+AUTHOR: Jiacai Liu
+#+LANGUAGE: cn
+#+EMAIL: jiacai2050+org@gmail.com
+#+OPTIONS: toc:nil num:nil
+#+STARTUP: content
+
+* master(unrelease)
+* v0.3.0 (2022-04-22)
+** New Features
+- Add commits/releases/assets-mode
+
+  [[file:assets/omg-modes.svg]]
+* v0.2.0 (2022-04-19)
+** New Features
+- Add =oh-my-github-repo-list= to list owned repositories
+- Add =oh-my-github-whoami=, used for authentication check
+#+begin_example
++---------------+--------------------+
+|Created At     |2011-09-03T15:26:22Z|
++---------------+--------------------+
+|ID             |1024025             |
++---------------+--------------------+
+|Login          |torvalds            |
++---------------+--------------------+
+|Name           |Linus Torvalds      |
++---------------+--------------------+
+|Company        |Linux Foundation    |
++---------------+--------------------+
+|Blog           |                    |
++---------------+--------------------+
+|Location       |Portland, OR        |
++---------------+--------------------+
+|Email          |                    |
++---------------+--------------------+
+|Hireable       |0                   |
++---------------+--------------------+
+|Public Repos   |0                   |
++---------------+--------------------+
+|Public Gists   |0                   |
++---------------+--------------------+
+|Private Repos  |-1                  |
++---------------+--------------------+
+|Private Gists  |-1                  |
++---------------+--------------------+
+|Followers      |156351              |
++---------------+--------------------+
+|Following      |0                   |
++---------------+--------------------+
+|Disk Usage     |-1                  |
++---------------+--------------------+
+#+end_example
+** Internal Improvements
+- Refactor directories
+- Reuse elisp code, derive =oh-my-github-stars-mode= based on =oh-my-github-repos-mode=
+
+* v0.1.0 (2022-04-17)
+Initial release
+** New Features
+- Add stars-mode
