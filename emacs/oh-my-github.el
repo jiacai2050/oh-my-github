@@ -405,7 +405,7 @@
 ;;;###autoload
 (defun oh-my-github-sync ()
   "Sync GitHub repositories(both owned and starred) into local database.
-Note: Emacs maybe hang for a while depending on how many repositories you have."
+Note: Emacs maybe hang a while depending on how many repositories you have."
   (omg-dyn-sync))
 
 ;;;###autoload

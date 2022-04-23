@@ -32,8 +32,8 @@ There are mainly two user interfaces:
    - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
    - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencise]]
 3. Put =el= and =so= files under =load-path=
-4. Generate Github personal access tokens at https://github.com/settings/tokens. You can check authentication with =M-x oh-my-github-whoami=
-5. Set =oh-my-github-pat= and execute =oh-my-github-setup= before use.
+4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =oh-my-github-pat=
+5. Setup oh-my-github with =oh-my-github-setup=
 
 Here is a =use-package= config demo:
 #+BEGIN_SRC emacs-lisp
@@ -43,6 +43,11 @@ Here is a =use-package= config demo:
   (setq oh-my-github-pat (getenv "GITHUB_TOKEN"))
   (oh-my-github-setup))
 #+END_SRC
+
+After setup, you can
+- Check authentication with =M-x oh-my-github-whoami=
+- Sync GitHub repositories into local database with =M-x oh-my-github-sync=
+  - Local database is =oh-my-github.db= inside your Emacs config directory by default, you can customize it with =oh-my-github-db-file= variable.
 
 ** Usage
 There are five major-modes in Oh My GitHub:
@@ -59,8 +64,9 @@ The figure below shows relations among those mode:
 [[file:assets/omg-modes.svg]]
 
 *** Useful commands
-- =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred) into local database. Emacs maybe hang for a while depending on how many repositories you have.
-  - Note: this command only need to be executed once.
+- =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred).
+  - Emacs maybe hang a while depending on how many repositories you have.
+  - Mostly this command only need to be executed once.
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.
