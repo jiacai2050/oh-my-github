@@ -23,14 +23,14 @@ There are mainly two user interfaces:
 - Support local storage
   - GitHub synchronization is only required on first use
 - Support search by keyword or programming language
-- Fast. Oh My GitHub's core is built in GNU99 C, pass [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]] test
+- Fast. Oh My GitHub's core is built in GNU99 C (tested with [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]])
 
 * Emacs Interface
 ** Install
 1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][oh-my-github.el]]
 2. Download required shared object, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
    - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
-   - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencise]]
+   - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencies]]
 3. Put =el= and =so= files under =load-path=
 4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =oh-my-github-pat=
 5. Setup oh-my-github with =oh-my-github-setup=
@@ -98,4 +98,4 @@ brew install jansson pkg-config
 * LICENSE
 Copyright (c) 2022 Jiacai Liu <jiacai2050+omg@gmail.com>
 
-GitHub Star is distributed under [[https://www.gnu.org/licenses/gpl-3.0.txt][GPL-3.0]] license.
+Oh My GitHub is distributed under [[https://www.gnu.org/licenses/gpl-3.0.txt][GPL-3.0]] license.
