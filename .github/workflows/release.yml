@@ -21,8 +21,8 @@ jobs:
           #   artifact_name: emacs/omg-dyn.dll
           #   asset_name: omg-dyn.dll
           - os: macos-latest
-            artifact_name: emacs/omg-dyn.dylib
-            asset_name: macos-x86-64-omg-dyn.dylib
+            artifact_name: emacs/omg-dyn.so
+            asset_name: macos-x86-64-omg-dyn.so
 
     steps:
     - uses: actions/checkout@v2

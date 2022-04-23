@@ -8,12 +8,10 @@ else
 	uname_S := $(shell uname -s)
 endif
 
+# On macOS, dynamic modules can also have the suffix .so in addition to .dylib.
 SO_FILE = $(EMACS_DIR)/omg-dyn.so
 ifeq ($(uname_S), Windows)
 	SO_FILE = $(EMACS_DIR)/omg-dyn.dll
-endif
-ifeq ($(uname_S), Darwin)
-	SO_FILE = $(EMACS_DIR)/omg-dyn.dylib
 endif
 
 CLI = omg-cli
