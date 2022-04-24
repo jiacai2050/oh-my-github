@@ -269,8 +269,9 @@ static void *omg_dyn_sync_background(void *ptr) {
 
   msg = "All sync finished, you can safely close this buffer now!\n";
   write(pipe, msg, strlen(msg));
-  IS_SYNC = 0;
 
+  IS_SYNC = 0;
+  close(pipe);
   return NULL;
 }
 
@@ -288,6 +289,7 @@ emacs_value omg_dyn_sync(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   int rc = pthread_create(&id, NULL, omg_dyn_sync_background, &fd);
   if (rc) {
     IS_SYNC = 0;
+    close(fd);
     return lisp_funcall(env, "error",
                         lisp_string(env, "create sync thread failed"));
   }
@@ -546,7 +548,8 @@ int emacs_module_init(runtime ert) {
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-sync"),
                env->make_function(env, 1, 1, omg_dyn_sync,
-                                  "Sync Github stars to local database", NULL));
+                                  "Sync Github repositories to local database",
+                                  NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-whoami"),
                env->make_function(
