@@ -7,6 +7,9 @@
 #+STARTUP: content
 
 * master(unrelease)
+** New Features
+- Sync repositories in background threads, which will not hang Emacs anymore. 🍺
+
 * v0.3.0 (2022-04-22)
 ** New Features
 - Add commits/releases/assets-mode

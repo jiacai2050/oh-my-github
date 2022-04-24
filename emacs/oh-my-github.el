@@ -3,8 +3,8 @@
 ;; Copyright (C) 2022 Jiacai Liu
 
 ;; Author: Jiacai Liu <jiacai2050@gmail.com>
-;; Version: 0.2.0
-;; Package-Requires: ((emacs "25.1"))
+;; Version: 0.3.0
+;; Package-Requires: ((emacs "28.1"))
 ;; Keywords: GitHub
 ;; URL: https://github.com/jiacai2050/oh-my-github
 
@@ -406,7 +406,12 @@
 (defun oh-my-github-sync ()
   "Sync GitHub repositories(both owned and starred) into local database.
 Note: Emacs maybe hang a while depending on how many repositories you have."
-  (omg-dyn-sync))
+  (interactive)
+  (let* ((buf (get-buffer-create "*oh-my-github-sync*"))
+         (sync-proc (make-pipe-process :name "oh-my-github-sync"
+                                       :buffer buf)))
+    (omg-dyn-sync sync-proc)
+    (message (format "Start syncing repositories in background. check %s buffer for progress" (buffer-name buf)))))
 
 ;;;###autoload
 (defun oh-my-github-star-list ()

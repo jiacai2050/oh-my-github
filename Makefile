@@ -18,7 +18,7 @@ CLI = omg-cli
 OBJECTS = $(CORE_DIR)/omg.o $(CLI_DIR)/cli.o $(EMACS_DIR)/emacs.o
 HEADERS = $(CORE_DIR)/create_table.h $(CORE_DIR)/omg.h
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3)
-LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3)
+LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3) -pthread
 CC = gcc
 
 $(CLI): $(OBJECTS)

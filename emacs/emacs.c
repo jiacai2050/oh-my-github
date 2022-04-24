@@ -1,8 +1,11 @@
 #include "../core/omg.h"
 #include "emacs-module.h"
+#include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 int plugin_is_GPL_compatible;
 
@@ -13,6 +16,9 @@ emacs_value Qnil;
 /* Core interface used for invoking C API */
 omg_context ctx = NULL;
 const char *FEATURE_NAME = "omg-dyn";
+// Use in multiple threads environment
+// 1 means sync is in progress, no other functions can be invoked
+static atomic_int IS_SYNC;
 
 #define lisp_symbol(env, symbol)                                               \
   ({                                                                           \
@@ -61,6 +67,11 @@ const char *FEATURE_NAME = "omg-dyn";
     if (ctx == NULL) {                                                         \
       return lisp_funcall(env, "error",                                        \
                           lisp_string(env, "omg-dyn not setup!"));             \
+    }                                                                          \
+    if (IS_SYNC) {                                                             \
+      return lisp_funcall(                                                     \
+          env, "error",                                                        \
+          lisp_string(env, "Sync is in progress. Wait a moment..."));          \
     }                                                                          \
   } while (0)
 
@@ -235,19 +246,50 @@ emacs_value omg_dyn_unstar(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   return Qt;
 }
 
-emacs_value omg_dyn_sync(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
-                         void *data) {
-  ENSURE_SETUP(env);
+static void *omg_dyn_sync_background(void *ptr) {
+  int pipe = *(int *)ptr;
+  char *msg = "Start syncing, wait a few seconds...\n";
+  write(pipe, msg, strlen(msg));
+
   omg_error err = omg_sync_stars(ctx);
   if (!is_ok(err)) {
-    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+    write(pipe, err.message, strlen(err.message));
+  } else {
+    msg = "Starred repositories sync finished!\n";
+    write(pipe, msg, strlen(msg));
   }
-
-  ENSURE_NONLOCAL_EXIT(env);
 
   err = omg_sync_repos(ctx);
   if (!is_ok(err)) {
-    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+    write(pipe, err.message, strlen(err.message));
+  } else {
+    msg = "Owned repositories sync finished!\n";
+    write(pipe, msg, strlen(msg));
+  }
+
+  msg = "All sync finished, you can safely close this buffer now!\n";
+  write(pipe, msg, strlen(msg));
+  IS_SYNC = 0;
+
+  return NULL;
+}
+
+emacs_value omg_dyn_sync(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                         void *data) {
+  ENSURE_SETUP(env);
+  IS_SYNC = 1;
+
+  emacs_value pipe = args[0];
+  pthread_t id;
+  int fd = env->open_channel(env, pipe);
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  int rc = pthread_create(&id, NULL, omg_dyn_sync_background, &fd);
+  if (rc) {
+    IS_SYNC = 0;
+    return lisp_funcall(env, "error",
+                        lisp_string(env, "create sync thread failed"));
   }
 
   return Qt;
@@ -503,7 +545,7 @@ int emacs_module_init(runtime ert) {
                                   "Teardown omg-dyn", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-sync"),
-               env->make_function(env, 0, 0, omg_dyn_sync,
+               env->make_function(env, 1, 1, omg_dyn_sync,
                                   "Sync Github stars to local database", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-whoami"),
