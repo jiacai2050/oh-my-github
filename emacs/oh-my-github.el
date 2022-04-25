@@ -62,6 +62,9 @@
   :group 'oh-my-github
   :type '(choice directory function))
 
+(defconst oh-my-github-pipe-eof "\n\n"
+  "Same with PIPE_EOF in C API. Used to notify no more data will be written to pipe")
+
 (defvar-local oh-my-github-query-keyword ""
   "The case-insensitive keyword used when query repos.")
 
@@ -70,6 +73,13 @@
 
 (defvar-local oh-my-github-query-repo-full-name ""
   "The repository full-name used when query commits/releases.")
+
+(defconst oh-my-github--log-buf-name "*oh-my-github-log*")
+
+(defun oh-my-github--log (fmt &rest args)
+  (with-current-buffer (get-buffer-create oh-my-github--log-buf-name)
+    (end-of-buffer)
+    (insert (apply 'format fmt args))))
 
 (defun oh-my-github--query-stars ()
   (seq-into (omg-dyn-query-stars oh-my-github-query-keyword oh-my-github-query-language)
@@ -366,11 +376,17 @@
                      oh-my-github-download-directory
                    (funcall eww-download-directory)))
             (dest (expand-file-name label dir)))
-      (when (yes-or-no-p (format "Download %s to %s\nMaybe hang a while for large file, continue?" raw-url dest))
         (when (or (not (file-exists-p dest))
                   (yes-or-no-p (format "%s exists, overwrite? " dest)))
-          (omg-dyn-download raw-url dest)
-          (message "Downloaded %s" dest)))
+          (let* ((proc (make-pipe-process :name (format "*oh-my-github-download %s*" raw-url)
+                                          :coding 'utf-8-emacs-unix
+                                          :filter (lambda (proc output)
+                                                    (oh-my-github--log "oh-my-github-download: %s\n" output)
+                                                    (when (string-match-p oh-my-github-pipe-eof output)
+                                                      (delete-process proc))))))
+            (omg-dyn-download proc raw-url dest)
+            (message (format "Start downloading %s in background. Check %s buffer for progress." raw-url
+                             oh-my-github--log-buf-name))))
     (user-error "There is no asset at point")))
 
 (defvar oh-my-github-assets-mode-map
@@ -409,9 +425,15 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
   (interactive)
   (let* ((buf (get-buffer-create "*oh-my-github-sync*"))
          (sync-proc (make-pipe-process :name "oh-my-github-sync"
+                                       :coding 'utf-8-emacs-unix
+                                       :filter (lambda (proc output)
+                                                 (oh-my-github--log "oh-my-github-sync: %s\n" output)
+                                                 (when (string-match-p oh-my-github-pipe-eof output)
+                                                   (delete-process proc)))
                                        :buffer buf)))
     (omg-dyn-sync sync-proc)
-    (message (format "Start syncing repositories in background. check %s buffer for progress" (buffer-name buf)))))
+    (message (format "Start syncing repositories in background. Check %s buffer for progress."
+                     oh-my-github--log-buf-name))))
 
 ;;;###autoload
 (defun oh-my-github-star-list ()

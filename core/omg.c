@@ -258,7 +258,12 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) {
 }
 
 omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
-  CURL *curl = ctx->curl;
+  // create a new curl handler every time, since download maybe called in
+  // multiple threads
+  auto_curl *curl = curl_easy_init();
+  if (!curl) {
+    return (omg_error){.code = OMG_CODE_CURL, .message = "curl init"};
+  }
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");

@@ -16,9 +16,11 @@ emacs_value Qnil;
 /* Core interface used for invoking C API */
 omg_context ctx = NULL;
 const char *FEATURE_NAME = "omg-dyn";
-// Use in multiple threads environment
+// Used in multiple threads environment
 // 1 means sync is in progress, no other functions can be invoked
 static atomic_int IS_SYNC;
+// Used to notify no more data will be written to pipe
+const char *PIPE_EOF = "\n\n";
 
 #define lisp_symbol(env, symbol)                                               \
   ({                                                                           \
@@ -81,26 +83,6 @@ static atomic_int IS_SYNC;
       return Qnil;                                                             \
     }                                                                          \
   } while (0)
-
-emacs_value eomg_sync_star(emacs_env *env, ptrdiff_t _nargs, emacs_value *_args,
-                           void *data) {
-  ENSURE_SETUP(env);
-  omg_error err = omg_sync_stars(ctx);
-  if (!is_ok(err)) {
-    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
-  }
-
-  ENSURE_NONLOCAL_EXIT(env);
-
-  err = omg_sync_repos(ctx);
-  if (!is_ok(err)) {
-    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
-  }
-
-  ENSURE_NONLOCAL_EXIT(env);
-
-  return Qt;
-}
 
 static char *get_string(emacs_env *env, emacs_value symbol) {
   if (env->is_not_nil(env, symbol)) {
@@ -248,14 +230,14 @@ emacs_value omg_dyn_unstar(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 
 static void *omg_dyn_sync_background(void *ptr) {
   int pipe = *(int *)ptr;
-  char *msg = "Start syncing, wait a few seconds...\n";
+  char *msg = "Start syncing, wait a few seconds...";
   write(pipe, msg, strlen(msg));
 
   omg_error err = omg_sync_stars(ctx);
   if (!is_ok(err)) {
     write(pipe, err.message, strlen(err.message));
   } else {
-    msg = "Starred repositories sync finished!\n";
+    msg = "Starred repositories sync finished!";
     write(pipe, msg, strlen(msg));
   }
 
@@ -263,12 +245,13 @@ static void *omg_dyn_sync_background(void *ptr) {
   if (!is_ok(err)) {
     write(pipe, err.message, strlen(err.message));
   } else {
-    msg = "Owned repositories sync finished!\n";
+    msg = "Owned repositories sync finished!";
     write(pipe, msg, strlen(msg));
   }
 
-  msg = "All sync finished, you can safely close this buffer now!\n";
+  msg = "All sync finished!";
   write(pipe, msg, strlen(msg));
+  write(pipe, PIPE_EOF, strlen(PIPE_EOF));
 
   IS_SYNC = 0;
   close(pipe);
@@ -281,11 +264,11 @@ emacs_value omg_dyn_sync(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   IS_SYNC = 1;
 
   emacs_value pipe = args[0];
-  pthread_t id;
   int fd = env->open_channel(env, pipe);
 
   ENSURE_NONLOCAL_EXIT(env);
 
+  pthread_t id;
   int rc = pthread_create(&id, NULL, omg_dyn_sync_background, &fd);
   if (rc) {
     IS_SYNC = 0;
@@ -481,17 +464,58 @@ emacs_value omg_dyn_query_releases(emacs_env *env, ptrdiff_t nargs,
   return release_vector;
 }
 
-emacs_value omg_dyn_download(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
-                             void *data) {
-  ENSURE_SETUP(env);
-  omg_auto_char url = get_string(env, args[0]);
-  omg_auto_char filename = get_string(env, args[1]);
-  ENSURE_NONLOCAL_EXIT(env);
+typedef struct {
+  int pipe;
+  char *url;
+  char *filename;
+} download_param;
+
+static void *omg_dyn_download_background(void *ptr) {
+  download_param *dp = (download_param *)ptr;
+  omg_auto_char url = dp->url;
+  omg_auto_char filename = dp->filename;
+  int pipe = dp->pipe;
+
+  char msg[256];
+  sprintf(msg, "Start download %s to %s", url, filename);
+  write(pipe, msg, strlen(msg));
 
   omg_error err = omg_download(ctx, url, filename);
   if (!is_ok(err)) {
-    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+    char msg[256];
+    sprintf(msg, "Download %s failed, msg:%s", url, err.message);
+    write(pipe, msg, strlen(msg));
+  } else {
+    char msg[256];
+    sprintf(msg, "Download %s success, location:%s", url, filename);
+    write(pipe, msg, strlen(msg));
   }
+
+  write(pipe, PIPE_EOF, strlen(PIPE_EOF));
+  close(pipe);
+  return NULL;
+}
+
+emacs_value omg_dyn_download(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
+                             void *data) {
+  ENSURE_SETUP(env);
+  emacs_value pipe = args[0];
+  char *url = get_string(env, args[1]);
+  char *filename = get_string(env, args[2]);
+  int fd = env->open_channel(env, pipe);
+  download_param dp = {.pipe = fd, .url = url, .filename = filename};
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  pthread_t id;
+  int rc = pthread_create(&id, NULL, omg_dyn_download_background, &dp);
+  if (rc) {
+    IS_SYNC = 0;
+    close(fd);
+    return lisp_funcall(env, "error",
+                        lisp_string(env, "create download thread failed"));
+  }
+
   return Qt;
 }
 
@@ -580,7 +604,7 @@ int emacs_module_init(runtime ert) {
                                   "Query releases of a repository", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-download"),
-               env->make_function(env, 2, 2, omg_dyn_download,
+               env->make_function(env, 3, 3, omg_dyn_download,
                                   "Download file given a asset raw-url", NULL));
 
   lisp_funcall(env, "provide", lisp_symbol(env, FEATURE_NAME));
