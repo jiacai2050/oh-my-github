@@ -3,7 +3,7 @@
 ;; Copyright (C) 2022 Jiacai Liu
 
 ;; Author: Jiacai Liu <jiacai2050@gmail.com>
-;; Version: 0.3.0
+;; Version: 0.4.0
 ;; Package-Requires: ((emacs "28.1"))
 ;; Keywords: GitHub
 ;; URL: https://github.com/jiacai2050/oh-my-github

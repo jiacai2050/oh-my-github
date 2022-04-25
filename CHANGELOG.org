@@ -7,6 +7,8 @@
 #+STARTUP: content
 
 * master(unrelease)
+
+* v0.4.0 (2022-04-25)
 ** New Features
 - Sync repositories in background threads, which will not hang Emacs anymore. 🍺
 - Download asset in background threads, which will not hang Emacs anymore. 🍺

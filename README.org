@@ -66,7 +66,7 @@ The figure below shows relations among those mode:
 *** Useful commands
 - =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred).
   - +Emacs maybe hang a while depending on how many repositories you have.+
-  - In master branch, synchronization happens in background thread, which will not hang Emacs any more. Users can check =*oh-my-github-sync*= for progress.
+  - Since v0.4.0, synchronization/download happens in background thread, which will not hang Emacs any more. Users can check =*oh-my-github-log*= for progress.
   - Mostly this command only need to be executed once.
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
