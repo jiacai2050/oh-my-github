@@ -2,6 +2,7 @@
 #include "create_table.h"
 #include <curl/curl.h>
 #include <jansson.h>
+#include <pcre2posix.h>
 #include <sqlite3.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -79,6 +80,14 @@ const size_t PER_PAGE = 100;
 
 const size_t SQL_DEFAULT_LEN = 512;
 
+// matched:
+// 1. language
+// 2. full_name
+// 3. current stats
+static const char *const RE =
+    "<span itemprop=\"programmingLanguage\">(\\S+)</span>"
+    ".*?<a href=\"/(\\S+/\\S+)/stargazers.*?(\\d+) stars this";
+
 void omg_free_char(char **buf) {
   if (*buf) {
 #ifdef VERBOSE
@@ -111,6 +120,7 @@ struct omg_context {
   sqlite3 *db;
   CURL *curl;
   struct curl_slist *headers;
+  regex_t trending_re;
   /* int timeout; */
 };
 
@@ -142,6 +152,7 @@ void omg_free_context(omg_context *ctx) {
     curl_easy_cleanup((*ctx)->curl);
     curl_global_cleanup();
     sqlite3_close((*ctx)->db);
+    pcre2_regfree(&(*ctx)->trending_re);
     free(*ctx);
   }
 }
@@ -203,10 +214,17 @@ omg_error omg_setup_context(const char *path, const char *github_token,
   if (!is_ok(err)) {
     return err;
   }
+
+  regex_t trending_re;
+  if (pcre2_regcomp(&trending_re, RE, REG_DOTALL)) {
+    return (omg_error){.code = OMG_CODE_INTERNAL,
+                       .message = "init trending regexp"};
+  }
   omg_context ctx = malloc(sizeof(struct omg_context));
   ctx->db = db;
   ctx->curl = curl;
   ctx->headers = req_headers;
+  ctx->trending_re = trending_re;
   *out = ctx;
 
   return NO_ERROR;
@@ -1069,6 +1087,94 @@ omg_error omg_query_releases(omg_context ctx, const char *full_name, int limit,
   }
 
   *out = (omg_release_list){.release_array = release_array, .length = resp_len};
+
+  return NO_ERROR;
+}
+
+// trending
+
+static const size_t TRENDING_LIST_LENGTH = 25;
+static const size_t TRENDING_TUPLE_LENGTH = 4;
+
+static omg_error omg_parse_trending(omg_context ctx, const char *html,
+                                    omg_repo_list *out) {
+  omg_repo *repo_array = malloc(sizeof(omg_repo) * TRENDING_LIST_LENGTH);
+  regmatch_t pmatch[TRENDING_TUPLE_LENGTH];
+
+  const char *head = html;
+  size_t arr_len = 0;
+  for (int i = 0; i < TRENDING_LIST_LENGTH; i++) {
+    if (pcre2_regexec(&ctx->trending_re, head, TRENDING_TUPLE_LENGTH, pmatch,
+                      0)) {
+      break;
+    }
+    arr_len++;
+    char *matched[TRENDING_TUPLE_LENGTH];
+    for (int j = 1; j < TRENDING_TUPLE_LENGTH; j++) {
+      regoff_t len = pmatch[j].rm_eo - pmatch[j].rm_so;
+
+      char *buf = malloc(len + 1);
+      memcpy(buf, head + pmatch[j].rm_so, len);
+      buf[len] = '\0';
+      matched[j] = buf;
+    }
+
+    omg_repo repo = omg_new_repo();
+    repo.lang = matched[1];
+    repo.full_name = matched[2];
+    repo.stargazers_count = atoi(matched[3]);
+    repo_array[i] = repo;
+
+    head += pmatch[3].rm_eo;
+  }
+
+  *out = (omg_repo_list){.repo_array = repo_array, .length = arr_len};
+  return NO_ERROR;
+}
+
+omg_error omg_query_trending(omg_context ctx, const char *lang,
+                             const char *since, omg_repo_list *out) {
+
+  char url[128];
+  sprintf(url, "https://github.com/trending/%s?since=%s", lang, since);
+  auto_curl *curl = curl_easy_init();
+  if (!curl) {
+    return (omg_error){.code = OMG_CODE_CURL, .message = "curl init"};
+  }
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, GET_METHOD);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+#ifdef VERBOSE
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#endif
+
+  auto_curl_slist *headers = NULL;
+  headers = curl_slist_append(headers, "x-pjax: true");
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+  auto_response chunk = {.memory = malloc(1), .size = 0};
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, mem_cb);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
+
+  CURLcode res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    return (omg_error){.code = OMG_CODE_CURL,
+                       .message = curl_easy_strerror(res)};
+  }
+
+  long response_code;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+  if (response_code != 200) {
+    fprintf(stderr, "visit trending resp code:%ld", response_code);
+    return (omg_error){.code = OMG_CODE_CURL,
+                       .message = "get trending url not OK"};
+  }
+
+  omg_error err = omg_parse_trending(ctx, chunk.memory, out);
+  if (!is_ok(err)) {
+    return err;
+  }
 
   return NO_ERROR;
 }

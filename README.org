@@ -89,7 +89,7 @@ The figure below shows relations among those mode:
 * Development
 ** Ubuntu
 #+begin_src bash
-sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind
+sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2*
 #+end_src
 ** macOS
 #+begin_src bash

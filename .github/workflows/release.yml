@@ -27,7 +27,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install -y xxd libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev
+      run: sudo apt-get install -y xxd libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev libpcre2*
     - if: matrix.os == 'macos-latest'
       run: brew install pkg-config jansson
     - name: Build Emacs dynamic module

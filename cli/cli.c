@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
     print_error(err);
     return 1;
   }
+  /*
   err = omg_sync_stars(ctx);
   if (!is_ok(err)) {
     print_error(err);
@@ -28,6 +29,13 @@ int main(int argc, char **argv) {
   }
 
   err = omg_sync_repos(ctx);
+  if (!is_ok(err)) {
+    print_error(err);
+    return 1;
+  }
+  */
+  omg_auto_repo_list lst = omg_new_repo_list();
+  err = omg_query_trending(ctx, "c", "weekly", &lst);
   if (!is_ok(err)) {
     print_error(err);
     return 1;
@@ -40,7 +48,8 @@ int main(int argc, char **argv) {
   /*   print_error(err); */
   /*   return 1; */
   /* } */
-  /* for (int i = 0; i < lst.length; i++) { */
-  /*   printf("%s\n", lst.repo_array[i].full_name); */
-  /* } */
+  printf("lst len:%d\n", lst.length);
+  for (int i = 0; i < lst.length; i++) {
+    printf("%s\n", lst.repo_array[i].full_name);
+  }
 }

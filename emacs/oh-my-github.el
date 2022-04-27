@@ -194,11 +194,12 @@
 (defvar oh-my-github-repos-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
-    (define-key map (kbd "RET") 'oh-my-github-browse-repo)
+    (define-key map (kbd "b") 'oh-my-github-browse-repo)
     (define-key map (kbd "w") 'oh-my-github-copy-repo-url)
     (define-key map (kbd "s") 'oh-my-github-query-repos)
     (define-key map (kbd "c") 'oh-my-github-query-commits)
     (define-key map (kbd "r") 'oh-my-github-query-releases)
+    (define-key map (kbd "RET") 'oh-my-github-query-releases)
     (define-key map (kbd "s-u") 'tabulated-list-revert)
     map)
   "Local keymap for oh-my-github-repos mode buffers.")
@@ -404,6 +405,11 @@
         tabulated-list-padding 2
         tabulated-list-sort-key (cons "Name" t))
   (tabulated-list-init-header))
+
+(defun oh-my-github-unload-function ()
+  (when (omg-dyn-teardown)
+    (message "omg-dyn closed"))
+  nil)
 
 ;;;###autoload
 (defun oh-my-github-setup()

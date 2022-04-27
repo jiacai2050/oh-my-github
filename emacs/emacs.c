@@ -522,7 +522,10 @@ emacs_value omg_dyn_download(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 emacs_value omg_dyn_setup(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                           void *data) {
   if (ctx) {
-    return Qt;
+#ifdef VERBOSE
+    printf("omg-dyn already inited\n");
+#endif
+    return Qnil;
   }
 
   omg_auto_char db_path = get_string(env, args[0]);
