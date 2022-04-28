@@ -227,6 +227,8 @@ emacs_value omg_dyn_query_trending(emacs_env *env, ptrdiff_t nargs,
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
 
+  ENSURE_NONLOCAL_EXIT(env);
+
   emacs_value repo_vector = lisp_funcall(
       env, "make-vector", lisp_integer(env, repo_lst.length), Qnil);
   for (int i = 0; i < repo_lst.length; i++) {

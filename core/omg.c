@@ -85,7 +85,7 @@ const size_t SQL_DEFAULT_LEN = 512;
 // 2. full_name
 // 3. current stats
 //
-// There is no language in some repositories, so don't parse now
+// There is no language in some repositories, so don't parse it now
 static const char *const RE =
     "<p class=\"col-9 color-fg-muted my-1 pr-4\">\\s+(.+?)\\s+</p>"
     /* ".+?(<span itemprop=\"programmingLanguage\">(\\S+)</span>)?" */
