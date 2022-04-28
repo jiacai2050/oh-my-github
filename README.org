@@ -50,9 +50,10 @@ After setup, you can
   - Local database is =oh-my-github.db= inside your Emacs config directory by default, you can customize it with =oh-my-github-db-file= variable.
 
 ** Usage
-There are five major-modes in Oh My GitHub:
+There are six major-modes in Oh My GitHub:
 - =oh-my-github-repos-mode=, used for owned repositories
 - =oh-my-github-stars-mode=, used for starred repositories
+- =oh-my-github-trending-repos-mode=, used for trending repositories
 
 repos/stars-mode are two main mode, there are three derived modes based those two:
 - =oh-my-github-commits-mode=, used for display commits of a repository
@@ -70,6 +71,7 @@ The figure below shows relations among those mode:
   - Mostly this command only need to be executed once.
 - =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
 - =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
+- =M-x oh-my-github-trending-repo-list= Display GitHub Trending repositories in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.
 
 ** Screenshots

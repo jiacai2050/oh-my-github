@@ -562,7 +562,7 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
 	  (switch-to-buffer buf))))
 
 ;;;###autoload
-(defun oh-my-github-trending-repos-list ()
+(defun oh-my-github-trending-repo-list ()
   (interactive)
     (with-current-buffer (get-buffer-create  "*oh-my-github trending repos*")
       (oh-my-github-trending-repos-mode)
