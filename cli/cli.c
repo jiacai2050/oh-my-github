@@ -21,7 +21,6 @@ int main(int argc, char **argv) {
     print_error(err);
     return 1;
   }
-  /*
   err = omg_sync_stars(ctx);
   if (!is_ok(err)) {
     print_error(err);
@@ -33,13 +32,13 @@ int main(int argc, char **argv) {
     print_error(err);
     return 1;
   }
-  */
-  omg_auto_repo_list lst = omg_new_repo_list();
-  err = omg_query_trending(ctx, "c", "weekly", &lst);
-  if (!is_ok(err)) {
-    print_error(err);
-    return 1;
-  }
+
+  /* omg_auto_repo_list lst = omg_new_repo_list(); */
+  /* err = omg_query_trending(ctx, "", "daily", &lst); */
+  /* if (!is_ok(err)) { */
+  /*   print_error(err); */
+  /*   return 1; */
+  /* } */
 
   /* omg_auto_repo_list lst; */
   /* err = omg_query_repos(ctx, "vagrant", NULL, &lst); */
@@ -48,9 +47,10 @@ int main(int argc, char **argv) {
   /*   print_error(err); */
   /*   return 1; */
   /* } */
-  printf("lst len:%d\n", lst.length);
-  for (int i = 0; i < lst.length; i++) {
-    printf("name:%s\n", lst.repo_array[i].full_name);
-    printf("desc:%s\n", lst.repo_array[i].description);
-  }
+  /* printf("lst len:%d\n", lst.length); */
+  /* for (int i = 0; i < lst.length; i++) { */
+  /*   printf("name:%s\n", lst.repo_array[i].full_name); */
+  /*   printf("desc:%s\n", lst.repo_array[i].description); */
+  /*   printf("stars:%d\n", lst.repo_array[i].stargazers_count); */
+  /* } */
 }

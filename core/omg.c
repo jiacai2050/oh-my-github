@@ -80,15 +80,17 @@ const size_t PER_PAGE = 100;
 
 const size_t SQL_DEFAULT_LEN = 512;
 
-// matched:
+// matched groups:
 // 1. desc
-// 2. language
-// 3. full_name
-// 4. current stats
+// 2. full_name
+// 3. current stats
+//
+// There is no language in some repositories, so don't parse now
 static const char *const RE =
     "<p class=\"col-9 color-fg-muted my-1 pr-4\">\\s+(.+?)\\s+</p>"
-    ".+?<span itemprop=\"programmingLanguage\">(\\S+)</span>"
-    ".+?<a href=\"/(\\S+/\\S+)/stargazers.*?(\\d+) stars this";
+    /* ".+?(<span itemprop=\"programmingLanguage\">(\\S+)</span>)?" */
+    ".+?<a href=\"/(\\S+/\\S+)/stargazers.*?(\\d+(?:,\\d+)*) stars "
+    "(today|this)";
 
 void omg_free_char(char **buf) {
   if (*buf) {
@@ -1096,7 +1098,23 @@ omg_error omg_query_releases(omg_context ctx, const char *full_name, int limit,
 // trending
 
 static const size_t TRENDING_LIST_LENGTH = 25;
-static const size_t TRENDING_TUPLE_LENGTH = 5;
+static const size_t TRENDING_TUPLE_LENGTH = 4;
+
+// parse number like 1,234 into 1234
+static size_t omg_parse_number(char *num_with_comma) {
+  int number = 0;
+  int i = 0;
+  char c;
+  while ((c = num_with_comma[i]) != '\0') {
+    if (c == ',') {
+      i++;
+      continue;
+    }
+    number = number * 10 + (c - '0');
+    i++;
+  }
+  return number;
+}
 
 static omg_error omg_parse_trending(omg_context ctx, const char *html,
                                     omg_repo_list *out) {
@@ -1123,10 +1141,9 @@ static omg_error omg_parse_trending(omg_context ctx, const char *html,
 
     omg_repo repo = omg_new_repo();
     repo.description = matched[1];
-    repo.lang = matched[2];
-    repo.full_name = matched[3];
-    omg_auto_char current_stars = matched[4];
-    repo.stargazers_count = atoi(current_stars);
+    repo.full_name = matched[2];
+    omg_auto_char current_stars = matched[3];
+    repo.stargazers_count = omg_parse_number(current_stars);
     repo_array[i] = repo;
 
     head += pmatch[3].rm_eo;
@@ -1170,9 +1187,13 @@ omg_error omg_query_trending(omg_context ctx, const char *lang,
   long response_code;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
   if (response_code != 200) {
-    fprintf(stderr, "visit trending resp code:%ld", response_code);
+    fprintf(stderr, "visit trending failed. code:%ld\n", response_code);
+    if (response_code == 429) {
+      return (omg_error){.code = OMG_CODE_CURL,
+                         .message = "429 Too Many Requests, try again later!"};
+    }
     return (omg_error){.code = OMG_CODE_CURL,
-                       .message = "get trending url not OK"};
+                       .message = "Get trending URL not 200 OK"};
   }
 
   omg_error err = omg_parse_trending(ctx, chunk.memory, out);

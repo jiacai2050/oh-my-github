@@ -234,10 +234,11 @@ emacs_value omg_dyn_query_trending(emacs_env *env, ptrdiff_t nargs,
     emacs_value row = lisp_funcall(
         env, "list",
         lisp_funcall(env, "number-to-string", lisp_integer(env, i)),
-        lisp_funcall(env, "vector", lisp_string(env, (char *)repo.full_name),
-                     lisp_string(env, string_or_empty(repo.description)),
+        lisp_funcall(env, "vector",
                      lisp_funcall(env, "number-to-string",
-                                  lisp_integer(env, repo.stargazers_count))));
+                                  lisp_integer(env, repo.stargazers_count)),
+                     lisp_string(env, (char *)repo.full_name),
+                     lisp_string(env, string_or_empty(repo.description)), ));
     lisp_funcall(env, "aset", repo_vector, lisp_integer(env, i), row);
   }
 

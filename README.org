@@ -83,8 +83,8 @@ The figure below shows relations among those mode:
 [[file:assets/omg-assets.png]]
 
 * Roadmap
+- [x] Trending
 - [ ] Gists
-- [ ] Trending
 
 * Development
 ** Ubuntu

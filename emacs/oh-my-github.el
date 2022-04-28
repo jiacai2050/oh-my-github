@@ -62,6 +62,26 @@
   :group 'oh-my-github
   :type '(choice directory function))
 
+(defcustom oh-my-github-trending-default-language ""
+  "Language used when query trending.
+Empty means ALL languages."
+  :group 'oh-my-github
+  :type 'string
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (setq-default oh-my-github-trending-query-language value)))
+
+(defconst oh-my-github--trending-ranges '(daily weekly monthly))
+
+(defcustom oh-my-github-trending-default-range "daily"
+  "Range used when query trending."
+  :group 'oh-my-github
+  :type 'string
+  :options oh-my-github--trending-ranges
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (setq-default oh-my-github-trending-query-range value)))
+
 (defconst oh-my-github-pipe-eof "\n\n"
   "Same with PIPE_EOF in C API. Used to notify no more data will be written to pipe")
 
@@ -73,6 +93,12 @@
 
 (defvar-local oh-my-github-query-repo-full-name ""
   "The repository full-name used when query commits/releases.")
+
+(defvar-local oh-my-github-trending-query-language oh-my-github-trending-default-language
+  "Language used when query trending repos.")
+
+(defvar-local oh-my-github-trending-query-range oh-my-github-trending-default-range
+  "Range used when query trending repos.")
 
 (defconst oh-my-github--log-buf-name "*oh-my-github-log*")
 
@@ -97,6 +123,11 @@
 (defun oh-my-github--query-releases ()
   (seq-into (omg-dyn-query-releases oh-my-github-query-repo-full-name
                                     oh-my-github-release-query-limit)
+            'list))
+
+(defun oh-my-github--query-trending-repos ()
+  (seq-into (omg-dyn-query-trending oh-my-github-trending-query-language
+                                    oh-my-github-trending-query-range)
             'list))
 
 (defun oh-my-github--get-full-name()
@@ -198,7 +229,6 @@
     (define-key map (kbd "w") 'oh-my-github-copy-repo-url)
     (define-key map (kbd "s") 'oh-my-github-query-repos)
     (define-key map (kbd "c") 'oh-my-github-query-commits)
-    (define-key map (kbd "r") 'oh-my-github-query-releases)
     (define-key map (kbd "RET") 'oh-my-github-query-releases)
     (define-key map (kbd "s-u") 'tabulated-list-revert)
     map)
@@ -206,8 +236,8 @@
 
 (define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github repos" "Manage GitHub owned repositories"
   (oh-my-github--init-repos-tabulated-list '("CreatedAt" 20 t)
-                                     (cons "CreatedAt" t)
-                                     'oh-my-github--query-repos))
+                                           (cons "CreatedAt" t)
+                                           'oh-my-github--query-repos))
 
 (defvar oh-my-github-stars-mode-map
   (let ((map (make-sparse-keymap)))
@@ -218,8 +248,8 @@
 
 (define-derived-mode oh-my-github-stars-mode oh-my-github-repos-mode "oh-my-github stars" "Manage GitHub starred repositories"
   (oh-my-github--init-repos-tabulated-list '("StarredAt" 20 t)
-                                     (cons "StarredAt" t)
-                                     'oh-my-github--query-stars))
+                                           (cons "StarredAt" t)
+                                           'oh-my-github--query-stars))
 
 (defun oh-my-github--get-commit-sha ()
   (when-let ((entry (tabulated-list-get-entry)))
@@ -277,7 +307,6 @@
         tabulated-list-padding 2
         tabulated-list-sort-key (cons "Date" t)
         tabulated-list-entries 'oh-my-github--query-commits)
-  ;; (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
   (tabulated-list-init-header))
 
 (defun oh-my-github-query-releases (full-name)
@@ -406,10 +435,51 @@
         tabulated-list-sort-key (cons "Name" t))
   (tabulated-list-init-header))
 
+(defun oh-my-github-trending-repos-revert (&optional revert)
+  (setq-local oh-my-github-trending-query-language oh-my-github-trending-default-language)
+  (setq-local oh-my-github-trending-query-range oh-my-github-trending-default-range))
+
+(defun oh-my-github-trending-repos-query (language range)
+  (interactive (list (read-string  "Programming Language(ALL): ")
+                     (completing-read "Range: " oh-my-github--trending-ranges)))
+  (when (eq major-mode 'oh-my-github-trending-repos-mode)
+    (setq-local oh-my-github-trending-query-language language)
+    (setq-local oh-my-github-trending-query-range range)
+    (tabulated-list-print t)))
+
+(defun oh-my-github-trending-repos-info ()
+  (interactive)
+  (message (format "Current trending filter is programming language(%s), range(%s)"
+                   (if (string-blank-p oh-my-github-trending-query-language)
+                       "ALL"
+                     oh-my-github-trending-query-language)
+                   oh-my-github-trending-query-range)))
+
+(defvar oh-my-github-trending-repos-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map oh-my-github-repos-mode-map)
+    (define-key map (kbd "s") 'oh-my-github-trending-repos-query)
+    (define-key map (kbd "i") 'oh-my-github-trending-repos-info)
+    map)
+  "Local keymap for oh-my-github-stars mode buffers.")
+
+(define-derived-mode oh-my-github-trending-repos-mode oh-my-github-repos-mode "oh-my-github trending" "Display Trending of GitHub repository"
+  (setq tabulated-list-format [("Recent Stars" 12 t)
+                               ("Repository" 25)
+                               ("Description" 5)]
+        tabulated-list-padding 2
+        tabulated-list-sort-key nil
+        tabulated-list-entries 'oh-my-github--query-trending-repos)
+
+  (add-hook 'tabulated-list-revert-hook 'oh-my-github-trending-repos-revert nil t)
+  (tabulated-list-init-header))
+
 (defun oh-my-github-unload-function ()
   (when (omg-dyn-teardown)
     (message "omg-dyn closed"))
   nil)
+
+;;  Public API
 
 ;;;###autoload
 (defun oh-my-github-setup()
@@ -490,6 +560,14 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
                      'left 15)
 	  (read-only-mode)
 	  (switch-to-buffer buf))))
+
+;;;###autoload
+(defun oh-my-github-trending-repos-list ()
+  (interactive)
+    (with-current-buffer (get-buffer-create  "*oh-my-github trending repos*")
+      (oh-my-github-trending-repos-mode)
+      (tabulated-list-print t)
+      (switch-to-buffer (current-buffer))))
 
 (provide 'oh-my-github)
 
