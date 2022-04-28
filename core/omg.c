@@ -1122,7 +1122,8 @@ static omg_error omg_parse_trending(omg_context ctx, const char *html,
     omg_repo repo = omg_new_repo();
     repo.lang = matched[1];
     repo.full_name = matched[2];
-    repo.stargazers_count = atoi(matched[3]);
+    omg_auto_char current_stars = matched[3];
+    repo.stargazers_count = atoi(current_stars);
     repo_array[i] = repo;
 
     head += pmatch[3].rm_eo;

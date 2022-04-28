@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
                            "-o", "ControlPath=~/.ssh/vagrant-%C",
                            "-o", "ControlPersist=1h"]
 
-  config.vm.provision :shell, inline: "sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind"
+  config.vm.provision :shell, inline: "sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev"
 
   config.vm.define :dev, primary: true do |node|
     node.vm.network :private_network, ip: "192.168.33.11"
