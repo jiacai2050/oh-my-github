@@ -17,14 +17,18 @@ endif
 CLI = omg-cli
 OBJECTS = $(CORE_DIR)/omg.o $(CLI_DIR)/cli.o $(EMACS_DIR)/emacs.o
 HEADERS = $(CORE_DIR)/create_table.h $(CORE_DIR)/omg.h
-CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3)
-LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3) -pthread
+CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix)
+LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
+# ASAN cannot be used with valgrind together
+ifeq ($(ENABLE_ASAN), 1)
+	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
+endif
 CC = gcc
 
 $(CLI): $(OBJECTS)
 	@if [ X$(OMG_TEST) = X1 ]; then \
 		echo "[Linking] test mode..." && \
-		$(CC) -O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address $(OBJECTS) $(LDFLAGS) -o $(CLI) ;\
+		$(CC) -O1  $(OBJECTS) $(LDFLAGS) -o $(CLI) ;\
 	else \
 		$(CC) -O3 $(OBJECTS) $(LDFLAGS) -o $(CLI) ;\
 	fi

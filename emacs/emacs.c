@@ -213,6 +213,40 @@ emacs_value omg_dyn_query_stars(emacs_env *env, ptrdiff_t nargs,
   return star_vector;
 }
 
+emacs_value omg_dyn_query_trending(emacs_env *env, ptrdiff_t nargs,
+                                   emacs_value *args, void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char lang = get_string(env, args[0]);
+  omg_auto_char since = get_string(env, args[1]);
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_auto_repo_list repo_lst = omg_new_repo_list();
+  omg_error err = omg_query_trending(ctx, lang, since, &repo_lst);
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  emacs_value repo_vector = lisp_funcall(
+      env, "make-vector", lisp_integer(env, repo_lst.length), Qnil);
+  for (int i = 0; i < repo_lst.length; i++) {
+    omg_repo repo = repo_lst.repo_array[i];
+    emacs_value row = lisp_funcall(
+        env, "list",
+        lisp_funcall(env, "number-to-string", lisp_integer(env, i)),
+        lisp_funcall(env, "vector",
+                     lisp_funcall(env, "number-to-string",
+                                  lisp_integer(env, repo.stargazers_count)),
+                     lisp_string(env, (char *)repo.full_name),
+                     lisp_string(env, string_or_empty(repo.description)), ));
+    lisp_funcall(env, "aset", repo_vector, lisp_integer(env, i), row);
+  }
+
+  return repo_vector;
+}
+
 emacs_value omg_dyn_unstar(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                            void *data) {
   ENSURE_SETUP(env);
@@ -522,7 +556,10 @@ emacs_value omg_dyn_download(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 emacs_value omg_dyn_setup(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                           void *data) {
   if (ctx) {
-    return Qt;
+#ifdef VERBOSE
+    printf("omg-dyn already inited\n");
+#endif
+    return Qnil;
   }
 
   omg_auto_char db_path = get_string(env, args[0]);
@@ -590,6 +627,10 @@ int emacs_module_init(runtime ert) {
                env->make_function(
                    env, 0, 2, omg_dyn_query_repos,
                    "Query GitHub repos based on keyword or language", NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-trending"),
+               env->make_function(env, 2, 2, omg_dyn_query_trending,
+                                  "Query GitHub trending", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar"),
                env->make_function(env, 1, 1, omg_dyn_unstar,
