@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
   /* } */
   printf("lst len:%d\n", lst.length);
   for (int i = 0; i < lst.length; i++) {
-    printf("%s\n", lst.repo_array[i].full_name);
+    printf("name:%s\n", lst.repo_array[i].full_name);
+    printf("desc:%s\n", lst.repo_array[i].description);
   }
 }

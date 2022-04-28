@@ -81,12 +81,14 @@ const size_t PER_PAGE = 100;
 const size_t SQL_DEFAULT_LEN = 512;
 
 // matched:
-// 1. language
-// 2. full_name
-// 3. current stats
+// 1. desc
+// 2. language
+// 3. full_name
+// 4. current stats
 static const char *const RE =
-    "<span itemprop=\"programmingLanguage\">(\\S+)</span>"
-    ".*?<a href=\"/(\\S+/\\S+)/stargazers.*?(\\d+) stars this";
+    "<p class=\"col-9 color-fg-muted my-1 pr-4\">\\s+(.+?)\\s+</p>"
+    ".+?<span itemprop=\"programmingLanguage\">(\\S+)</span>"
+    ".+?<a href=\"/(\\S+/\\S+)/stargazers.*?(\\d+) stars this";
 
 void omg_free_char(char **buf) {
   if (*buf) {
@@ -1094,7 +1096,7 @@ omg_error omg_query_releases(omg_context ctx, const char *full_name, int limit,
 // trending
 
 static const size_t TRENDING_LIST_LENGTH = 25;
-static const size_t TRENDING_TUPLE_LENGTH = 4;
+static const size_t TRENDING_TUPLE_LENGTH = 5;
 
 static omg_error omg_parse_trending(omg_context ctx, const char *html,
                                     omg_repo_list *out) {
@@ -1120,9 +1122,10 @@ static omg_error omg_parse_trending(omg_context ctx, const char *html,
     }
 
     omg_repo repo = omg_new_repo();
-    repo.lang = matched[1];
-    repo.full_name = matched[2];
-    omg_auto_char current_stars = matched[3];
+    repo.description = matched[1];
+    repo.lang = matched[2];
+    repo.full_name = matched[3];
+    omg_auto_char current_stars = matched[4];
     repo.stargazers_count = atoi(current_stars);
     repo_array[i] = repo;
 
