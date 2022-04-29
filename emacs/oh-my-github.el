@@ -64,7 +64,7 @@
 
 (defcustom oh-my-github-trending-default-language ""
   "Language used when query trending.
-Empty means ALL languages."
+Empty means `any' languages."
   :group 'oh-my-github
   :type 'string
   :set (lambda (symbol value)
@@ -138,6 +138,13 @@ Empty means ALL languages."
   (when-let ((name (oh-my-github--get-full-name)))
     (format "https://github.com/%s" name)))
 
+(defun oh-my-github--trending-repo-buf-name ()
+  (format "*oh-my-github [%s]-[%s] trending repos*"
+          (if (string-blank-p oh-my-github-trending-query-language)
+              "any"
+            oh-my-github-trending-query-language)
+          oh-my-github-trending-query-range))
+
 (defconst oh-my-github-whoami-col-sep ",,,")
 (defconst oh-my-github-whoami-row-sep "\n")
 
@@ -183,7 +190,7 @@ Empty means ALL languages."
 (defun oh-my-github-query-repos (keyword language)
   (interactive (list (read-string (format "Keyword(%s): " oh-my-github-query-keyword)
                                   nil nil oh-my-github-query-keyword)
-                     (read-string (format "Programming Language(%s): " oh-my-github-query-language)
+                     (read-string (format "Language(%s): " oh-my-github-query-language)
                                   nil nil oh-my-github-query-language)))
   (when (or (eq major-mode 'oh-my-github-stars-mode)
             (eq major-mode 'oh-my-github-repos-mode))
@@ -437,29 +444,22 @@ Empty means ALL languages."
 
 (defun oh-my-github-trending-repos-revert (&optional revert)
   (setq-local oh-my-github-trending-query-language oh-my-github-trending-default-language)
-  (setq-local oh-my-github-trending-query-range oh-my-github-trending-default-range))
+  (setq-local oh-my-github-trending-query-range oh-my-github-trending-default-range)
+  (rename-buffer (oh-my-github--trending-repo-buf-name) t))
 
 (defun oh-my-github-trending-repos-query (language range)
-  (interactive (list (read-string  "Programming Language(ALL): ")
+  (interactive (list (read-string  "Language(Any): ")
                      (completing-read "Range: " oh-my-github--trending-ranges)))
   (when (eq major-mode 'oh-my-github-trending-repos-mode)
     (setq-local oh-my-github-trending-query-language language)
     (setq-local oh-my-github-trending-query-range range)
-    (tabulated-list-print t)))
-
-(defun oh-my-github-trending-repos-info ()
-  (interactive)
-  (message (format "Current trending filter is programming language(%s), range(%s)"
-                   (if (string-blank-p oh-my-github-trending-query-language)
-                       "ALL"
-                     oh-my-github-trending-query-language)
-                   oh-my-github-trending-query-range)))
+    (tabulated-list-print t)
+    (rename-buffer (oh-my-github--trending-repo-buf-name) t)))
 
 (defvar oh-my-github-trending-repos-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map oh-my-github-repos-mode-map)
     (define-key map (kbd "s") 'oh-my-github-trending-repos-query)
-    (define-key map (kbd "i") 'oh-my-github-trending-repos-info)
     map)
   "Local keymap for oh-my-github-stars mode buffers.")
 
@@ -474,6 +474,7 @@ Empty means ALL languages."
   (add-hook 'tabulated-list-revert-hook 'oh-my-github-trending-repos-revert nil t)
   (tabulated-list-init-header))
 
+;; unload-feature hook, free C resources
 (defun oh-my-github-unload-function ()
   (when (omg-dyn-teardown)
     (message "omg-dyn closed"))
@@ -564,7 +565,7 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
 ;;;###autoload
 (defun oh-my-github-trending-repo-list ()
   (interactive)
-    (with-current-buffer (get-buffer-create  "*oh-my-github trending repos*")
+  (with-current-buffer (get-buffer-create (oh-my-github--trending-repo-buf-name))
       (oh-my-github-trending-repos-mode)
       (tabulated-list-print t)
       (switch-to-buffer (current-buffer))))

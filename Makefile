@@ -53,5 +53,13 @@ $(SO_FILE): $(OBJECTS)
 emacs-dyn: $(SO_FILE)
 	@echo "Emacs dynamic module saved to $(SO_FILE)"
 
+install-deps:
+ifeq ($(uname_S), Darwin)
+	brew install jansson pkg-config pcre2
+endif
+ifeq ($(uname_S), Linux)
+	sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev
+endif
+
 clean:
 	rm -f $(CLI) $(SO_FILE) $(OBJECTS)

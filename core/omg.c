@@ -122,8 +122,12 @@ static void free_stmt(sqlite3_stmt **stmt) {
 // actual omg implementation
 struct omg_context {
   sqlite3 *db;
-  CURL *curl;
-  struct curl_slist *headers;
+  // Used for api.github.com
+  CURL *api_curl;
+  struct curl_slist *api_headers;
+  // Used for github.com/trending
+  CURL *trending_curl;
+  struct curl_slist *trending_headers;
   regex_t trending_re;
   /* int timeout; */
 };
@@ -152,8 +156,10 @@ void omg_free_context(omg_context *ctx) {
 #ifdef VERBOSE
     printf("free omg_context\n");
 #endif
-    curl_slist_free_all((*ctx)->headers);
-    curl_easy_cleanup((*ctx)->curl);
+    curl_slist_free_all((*ctx)->api_headers);
+    curl_easy_cleanup((*ctx)->api_curl);
+    curl_slist_free_all((*ctx)->trending_headers);
+    curl_easy_cleanup((*ctx)->trending_curl);
     curl_global_cleanup();
     sqlite3_close((*ctx)->db);
     pcre2_regfree(&(*ctx)->trending_re);
@@ -186,38 +192,52 @@ static omg_error init_db(const char *root, sqlite3 **out_db) {
 omg_error omg_setup_context(const char *path, const char *github_token,
                             omg_context *out) {
   curl_global_init(CURL_GLOBAL_ALL);
-  CURL *curl = curl_easy_init();
-  if (!curl) {
-    return (omg_error){.code = OMG_CODE_CURL, .message = "curl init"};
+  CURL *api_curl = curl_easy_init();
+  if (!api_curl) {
+    return (omg_error){.code = OMG_CODE_CURL, .message = "api curl init"};
   }
 #ifdef CURL_VERBOSE
   curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 #endif
-  struct curl_slist *req_headers = NULL;
+  struct curl_slist *api_headers = NULL;
   char header_auth[128];
   sprintf(header_auth, "Authorization: token %s", github_token);
-  req_headers = curl_slist_append(
-      req_headers, "Content-Type: application/json; charset=utf-8");
-  if (req_headers == NULL) {
+  api_headers = curl_slist_append(
+      api_headers, "Content-Type: application/json; charset=utf-8");
+  if (api_headers == NULL) {
     return (omg_error){.code = OMG_CODE_CURL, .message = "init curl header"};
   }
-  req_headers = curl_slist_append(req_headers, HEADER_ACCEPT);
-  if (req_headers == NULL) {
-    curl_slist_free_all(req_headers);
+  api_headers = curl_slist_append(api_headers, HEADER_ACCEPT);
+  if (api_headers == NULL) {
+    curl_slist_free_all(api_headers);
     return (omg_error){.code = OMG_CODE_CURL, .message = "append2 header"};
   }
-  req_headers = curl_slist_append(req_headers, header_auth);
-  req_headers = curl_slist_append(req_headers, HEADER_UA);
-  if (req_headers == NULL) {
-    curl_slist_free_all(req_headers);
+  api_headers = curl_slist_append(api_headers, header_auth);
+  api_headers = curl_slist_append(api_headers, HEADER_UA);
+  if (api_headers == NULL) {
+    curl_slist_free_all(api_headers);
     return (omg_error){.code = OMG_CODE_CURL, .message = "append3 header"};
   }
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, req_headers);
+  curl_easy_setopt(api_curl, CURLOPT_HTTPHEADER, api_headers);
   sqlite3 *db = NULL;
   omg_error err = init_db(path, &db);
   if (!is_ok(err)) {
     return err;
   }
+
+  CURL *trending_curl = curl_easy_init();
+  if (!trending_curl) {
+    return (omg_error){.code = OMG_CODE_CURL, .message = "trending curl init"};
+  }
+#ifdef CURL_VERBOSE
+  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#endif
+  struct curl_slist *trending_headers = NULL;
+  trending_headers = curl_slist_append(trending_headers, "x-pjax: true");
+  trending_headers = curl_slist_append(trending_headers, HEADER_UA);
+  curl_easy_setopt(trending_curl, CURLOPT_HTTPHEADER, trending_headers);
+  curl_easy_setopt(trending_curl, CURLOPT_WRITEFUNCTION, mem_cb);
+  curl_easy_setopt(trending_curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   regex_t trending_re;
   if (pcre2_regcomp(&trending_re, RE, REG_DOTALL)) {
@@ -226,8 +246,10 @@ omg_error omg_setup_context(const char *path, const char *github_token,
   }
   omg_context ctx = malloc(sizeof(struct omg_context));
   ctx->db = db;
-  ctx->curl = curl;
-  ctx->headers = req_headers;
+  ctx->api_curl = api_curl;
+  ctx->api_headers = api_headers;
+  ctx->trending_curl = trending_curl;
+  ctx->trending_headers = trending_headers;
   ctx->trending_re = trending_re;
   *out = ctx;
 
@@ -236,7 +258,7 @@ omg_error omg_setup_context(const char *path, const char *github_token,
 
 static omg_error omg_request(omg_context ctx, const char *method,
                              const char *url, json_t *payload, json_t **out) {
-  CURL *curl = ctx->curl;
+  CURL *curl = ctx->api_curl;
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
   if (payload) {
@@ -1158,24 +1180,13 @@ omg_error omg_query_trending(omg_context ctx, const char *lang,
 
   char url[128];
   sprintf(url, "https://github.com/trending/%s?since=%s", lang, since);
-  auto_curl *curl = curl_easy_init();
+  CURL *curl = ctx->trending_curl;
   if (!curl) {
     return (omg_error){.code = OMG_CODE_CURL, .message = "curl init"};
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, GET_METHOD);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-#ifdef VERBOSE
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-#endif
-
-  auto_curl_slist *headers = NULL;
-  headers = curl_slist_append(headers, "x-pjax: true");
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
   auto_response chunk = {.memory = malloc(1), .size = 0};
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, mem_cb);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
 
   CURLcode res = curl_easy_perform(curl);

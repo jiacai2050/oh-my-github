@@ -89,14 +89,10 @@ The figure below shows relations among those mode:
 - [ ] Gists
 
 * Development
-** Ubuntu
-#+begin_src bash
-sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev
-#+end_src
-** macOS
-#+begin_src bash
-brew install jansson pkg-config
-#+end_src
+- Ubuntu
+- macOS
+
+Dependencies can be found in [[file:Makefile][Makefile]]'s =install-deps= target
 
 * LICENSE
 Copyright (c) 2022 Jiacai Liu <jiacai2050+omg@gmail.com>
