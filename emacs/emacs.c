@@ -213,16 +213,17 @@ emacs_value omg_dyn_query_stars(emacs_env *env, ptrdiff_t nargs,
   return star_vector;
 }
 
-emacs_value omg_dyn_query_trending(emacs_env *env, ptrdiff_t nargs,
-                                   emacs_value *args, void *data) {
+emacs_value omg_dyn_query_trendings(emacs_env *env, ptrdiff_t nargs,
+                                    emacs_value *args, void *data) {
   ENSURE_SETUP(env);
-  omg_auto_char lang = get_string(env, args[0]);
-  omg_auto_char since = get_string(env, args[1]);
+  omg_auto_char spoken_lang = get_string(env, args[0]);
+  omg_auto_char lang = get_string(env, args[1]);
+  omg_auto_char since = get_string(env, args[2]);
 
   ENSURE_NONLOCAL_EXIT(env);
 
   omg_auto_repo_list repo_lst = omg_new_repo_list();
-  omg_error err = omg_query_trending(ctx, lang, since, &repo_lst);
+  omg_error err = omg_query_trending(ctx, spoken_lang, lang, since, &repo_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
@@ -628,9 +629,9 @@ int emacs_module_init(runtime ert) {
                    env, 0, 2, omg_dyn_query_repos,
                    "Query GitHub repos based on keyword or language", NULL));
 
-  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-trending"),
-               env->make_function(env, 2, 2, omg_dyn_query_trending,
-                                  "Query GitHub trending", NULL));
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-trendings"),
+               env->make_function(env, 3, 3, omg_dyn_query_trendings,
+                                  "Query GitHub trendings", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar"),
                env->make_function(env, 1, 1, omg_dyn_unstar,

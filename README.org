@@ -11,8 +11,9 @@ Oh My GitHub is a delightful, open source tool for managing your GitHub reposito
 There are mainly two user interfaces:
 - Emacs. Full-featured
   - *Sync* repositories(owned and starred) list into local database
-  - *Query repositories* by keyword or programming language
-  - *Unstar*
+  - *Query owned/starred repositories* by keyword or programming language
+  - *Query trending repositories* by spoken language, programming language and range
+  - *Unstar* a starred repository
   - *Query latest commits*
   - *Query latest releases*
   - *Download release asset files*
@@ -69,20 +70,22 @@ The figure below shows relations among those mode:
   - +Emacs maybe hang a while depending on how many repositories you have.+
   - Since v0.4.0, synchronization/download happens in background thread, which will not hang Emacs any more. Users can check =*oh-my-github-log*= for progress.
   - Mostly this command only need to be executed once.
-- =M-x oh-my-github-star-list= Display GitHub starred repositories in table view.
-- =M-x oh-my-github-repo-list= Display GitHub owned repositories in table view.
-- =M-x oh-my-github-trending-repo-list= Display GitHub Trending repositories in table view.
+- =M-x oh-my-github-stars-list= Display GitHub starred repositories in table view.
+- =M-x oh-my-github-repos-list= Display GitHub owned repositories in table view.
+- =M-x oh-my-github-trendings-list= Display GitHub Trending repositories in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.
 
 ** Screenshots
-#+CAPTION: stars mode
+*** Stars mode
 [[file:assets/omg-stars.png]]
-#+CAPTION: commits mode
+*** Commits mode
 [[file:assets/omg-commits.png]]
-#+CAPTION: releases mode
+*** Releases mode
 [[file:assets/omg-releases.png]]
-#+CAPTION: assets modes
+*** Assets modes
 [[file:assets/omg-assets.png]]
+*** Trendings modes
+[[file:assets/omg-trendings.png]]
 
 * Roadmap
 - [x] Trending

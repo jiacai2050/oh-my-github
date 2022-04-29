@@ -191,6 +191,7 @@ void omg_free_release_list(omg_release_list *);
 omg_error omg_query_releases(omg_context, const char *full_name, int limit,
                              omg_release_list *);
 
-omg_error omg_query_trending(omg_context, const char *lang, const char *since,
+omg_error omg_query_trending(omg_context, const char *spoken_lang,
+                             const char *lang, const char *since,
                              omg_repo_list *);
 #endif

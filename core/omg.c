@@ -1175,11 +1175,17 @@ static omg_error omg_parse_trending(omg_context ctx, const char *html,
   return NO_ERROR;
 }
 
-omg_error omg_query_trending(omg_context ctx, const char *lang,
-                             const char *since, omg_repo_list *out) {
+omg_error omg_query_trending(omg_context ctx, const char *spoken_lang,
+                             const char *lang, const char *range,
+                             omg_repo_list *out) {
 
   char url[128];
-  sprintf(url, "https://github.com/trending/%s?since=%s", lang, since);
+  sprintf(url,
+          "https://github.com/trending/%s?since=%s&spoken_language_code=%s",
+          empty_string(lang) ? "" : lang,   // lang
+          empty_string(range) ? "" : range, // range
+          empty_string(spoken_lang) ? "" : spoken_lang);
+
   CURL *curl = ctx->trending_curl;
   if (!curl) {
     return (omg_error){.code = OMG_CODE_CURL, .message = "curl init"};

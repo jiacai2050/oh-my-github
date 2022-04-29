@@ -7,12 +7,16 @@
 #+STARTUP: content
 
 * master(unrelease)
+** New Features
+- Query trending support spoken languages filter
+
 ** Internal Improvements
 - Trending API reuse =curl= instance
 
 * v0.5.0 (2022-04-28)
 ** New Features
 - Add oh-my-github-trending-repos-mode, browse https://github.com/trending in Emacs
+  [[file:assets/omg-trendings.png]]
 
 * v0.4.0 (2022-04-25)
 ** New Features

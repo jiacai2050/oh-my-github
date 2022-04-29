@@ -62,25 +62,49 @@
   :group 'oh-my-github
   :type '(choice directory function))
 
-(defcustom oh-my-github-trending-default-language ""
-  "Language used when query trending.
-Empty means `any' languages."
+(defcustom oh-my-github-trendings-default-spoken-language nil
+  "2-letter spoken language code used when query trendings.
+For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.html"
   :group 'oh-my-github
-  :type 'string
+  :type '(choice (string :tag "Spoken Language")
+                 (const :tag "Any" nil))
   :set (lambda (symbol value)
          (set-default symbol value)
-         (setq-default oh-my-github-trending-query-language value)))
+         (setq-default oh-my-github-trendings-query-language value)))
 
-(defconst oh-my-github--trending-ranges '(daily weekly monthly))
-
-(defcustom oh-my-github-trending-default-range "daily"
-  "Range used when query trending."
+(defcustom oh-my-github-trendings-default-language nil
+  "Programming Language used when query trendings."
   :group 'oh-my-github
-  :type 'string
-  :options oh-my-github--trending-ranges
+  :type '(choice (string :tag "Programming Language")
+                 (const :tag "Any" nil))
   :set (lambda (symbol value)
          (set-default symbol value)
-         (setq-default oh-my-github-trending-query-range value)))
+         (setq-default oh-my-github-trendings-query-language value)))
+
+(defconst oh-my-github--trendings-ranges '("daily" "weekly" "monthly"))
+
+(defcustom oh-my-github-trendings-default-range "daily"
+  "Range used when query trendings."
+  :group 'oh-my-github
+  :type 'string
+  :options oh-my-github--trendings-ranges
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (setq-default oh-my-github-trendings-query-range value)))
+
+(defconst oh-my-github--trendings-spoken-languages  #s(hash-table
+                                                       test equal
+                                                       data ("Any" ""
+                                                             "Chinese" "zh"
+                                                             "Dutch" "nl"
+                                                             "English" "en"
+                                                             "French" "fr"
+                                                             "Japanese" "ja"
+                                                             "Korean" "ko"
+                                                             "Polish" "pl"
+                                                             "Russian" "ru"
+                                                             "Spanish" "es"
+                                                             "Ukrainian" "uk")))
 
 (defconst oh-my-github-pipe-eof "\n\n"
   "Same with PIPE_EOF in C API. Used to notify no more data will be written to pipe")
@@ -94,11 +118,14 @@ Empty means `any' languages."
 (defvar-local oh-my-github-query-repo-full-name ""
   "The repository full-name used when query commits/releases.")
 
-(defvar-local oh-my-github-trending-query-language oh-my-github-trending-default-language
-  "Language used when query trending repos.")
+(defvar-local oh-my-github-trendings-query-spoken-language oh-my-github-trendings-default-spoken-language
+  "Spoken language used when query trendings repos.")
 
-(defvar-local oh-my-github-trending-query-range oh-my-github-trending-default-range
-  "Range used when query trending repos.")
+(defvar-local oh-my-github-trendings-query-language oh-my-github-trendings-default-language
+  "Language used when query trendings repos.")
+
+(defvar-local oh-my-github-trendings-query-range oh-my-github-trendings-default-range
+  "Range used when query trendings repos.")
 
 (defconst oh-my-github--log-buf-name "*oh-my-github-log*")
 
@@ -125,9 +152,10 @@ Empty means `any' languages."
                                     oh-my-github-release-query-limit)
             'list))
 
-(defun oh-my-github--query-trending-repos ()
-  (seq-into (omg-dyn-query-trending oh-my-github-trending-query-language
-                                    oh-my-github-trending-query-range)
+(defun oh-my-github--query-trendings ()
+  (seq-into (omg-dyn-query-trendings oh-my-github-trendings-query-spoken-language
+                                     oh-my-github-trendings-query-language
+                                     oh-my-github-trendings-query-range)
             'list))
 
 (defun oh-my-github--get-full-name()
@@ -138,12 +166,11 @@ Empty means `any' languages."
   (when-let ((name (oh-my-github--get-full-name)))
     (format "https://github.com/%s" name)))
 
-(defun oh-my-github--trending-repo-buf-name ()
-  (format "*oh-my-github [%s]-[%s] trending repos*"
-          (if (string-blank-p oh-my-github-trending-query-language)
-              "any"
-            oh-my-github-trending-query-language)
-          oh-my-github-trending-query-range))
+(defun oh-my-github--trendings-buf-name ()
+  (format "*oh-my-github [%s]-[%s]-[%s] trendings repos*"
+          (or oh-my-github-trendings-query-spoken-language "any")
+          (or oh-my-github-trendings-query-language "any")
+          oh-my-github-trendings-query-range))
 
 (defconst oh-my-github-whoami-col-sep ",,,")
 (defconst oh-my-github-whoami-row-sep "\n")
@@ -413,17 +440,17 @@ Empty means `any' languages."
                      oh-my-github-download-directory
                    (funcall eww-download-directory)))
             (dest (expand-file-name label dir)))
-        (when (or (not (file-exists-p dest))
-                  (yes-or-no-p (format "%s exists, overwrite? " dest)))
-          (let* ((proc (make-pipe-process :name (format "*oh-my-github-download %s*" raw-url)
-                                          :coding 'utf-8-emacs-unix
-                                          :filter (lambda (proc output)
-                                                    (oh-my-github--log "oh-my-github-download: %s\n" output)
-                                                    (when (string-match-p oh-my-github-pipe-eof output)
-                                                      (delete-process proc))))))
-            (omg-dyn-download proc raw-url dest)
-            (message (format "Start downloading %s in background. Check %s buffer for progress." raw-url
-                             oh-my-github--log-buf-name))))
+      (when (or (not (file-exists-p dest))
+                (yes-or-no-p (format "%s exists, overwrite? " dest)))
+        (let* ((proc (make-pipe-process :name (format "*oh-my-github-download %s*" raw-url)
+                                        :coding 'utf-8-emacs-unix
+                                        :filter (lambda (proc output)
+                                                  (oh-my-github--log "oh-my-github-download: %s\n" output)
+                                                  (when (string-match-p oh-my-github-pipe-eof output)
+                                                    (delete-process proc))))))
+          (omg-dyn-download proc raw-url dest)
+          (message (format "Start downloading %s in background. Check %s buffer for progress." raw-url
+                           oh-my-github--log-buf-name))))
     (user-error "There is no asset at point")))
 
 (defvar oh-my-github-assets-mode-map
@@ -442,36 +469,41 @@ Empty means `any' languages."
         tabulated-list-sort-key (cons "Name" t))
   (tabulated-list-init-header))
 
-(defun oh-my-github-trending-repos-revert (&optional revert)
-  (setq-local oh-my-github-trending-query-language oh-my-github-trending-default-language)
-  (setq-local oh-my-github-trending-query-range oh-my-github-trending-default-range)
-  (rename-buffer (oh-my-github--trending-repo-buf-name) t))
+(defun oh-my-github-trendings-revert (&optional revert)
+  (setq-local oh-my-github-trendings-query-spoken-language oh-my-github-trendings-default-spoken-language)
+  (setq-local oh-my-github-trendings-query-language oh-my-github-trendings-default-language)
+  (setq-local oh-my-github-trendings-query-range oh-my-github-trendings-default-range)
+  (rename-buffer (oh-my-github--trendings-buf-name) t))
 
-(defun oh-my-github-trending-repos-query (language range)
-  (interactive (list (read-string  "Language(Any): ")
-                     (completing-read "Range: " oh-my-github--trending-ranges)))
-  (when (eq major-mode 'oh-my-github-trending-repos-mode)
-    (setq-local oh-my-github-trending-query-language language)
-    (setq-local oh-my-github-trending-query-range range)
+(defun oh-my-github-trendings-query (spoken-language language range)
+  (interactive (list (completing-read  "Spoken language: " oh-my-github--trendings-spoken-languages)
+                     (read-string  "Programming Language(Any): ")
+                     (completing-read "Range: " oh-my-github--trendings-ranges)))
+  (when (eq major-mode 'oh-my-github-trendings-mode)
+    (let ((spoken-language-code (gethash spoken-language oh-my-github--trendings-spoken-languages
+                                         spoken-language)))
+      (setq-local oh-my-github-trendings-query-spoken-language spoken-language-code)
+      (setq-local oh-my-github-trendings-query-language language)
+      (setq-local oh-my-github-trendings-query-range range))
     (tabulated-list-print t)
-    (rename-buffer (oh-my-github--trending-repo-buf-name) t)))
+    (rename-buffer (oh-my-github--trendings-buf-name) t)))
 
-(defvar oh-my-github-trending-repos-mode-map
+(defvar oh-my-github-trendings-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map oh-my-github-repos-mode-map)
-    (define-key map (kbd "s") 'oh-my-github-trending-repos-query)
+    (define-key map (kbd "s") 'oh-my-github-trendings-query)
     map)
   "Local keymap for oh-my-github-stars mode buffers.")
 
-(define-derived-mode oh-my-github-trending-repos-mode oh-my-github-repos-mode "oh-my-github trending" "Display Trending of GitHub repository"
+(define-derived-mode oh-my-github-trendings-mode oh-my-github-repos-mode "oh-my-github trendings" "Display Trendings of GitHub repository"
   (setq tabulated-list-format [("Recent Stars" 12 t)
                                ("Repository" 25)
                                ("Description" 5)]
         tabulated-list-padding 2
         tabulated-list-sort-key nil
-        tabulated-list-entries 'oh-my-github--query-trending-repos)
+        tabulated-list-entries 'oh-my-github--query-trendings)
 
-  (add-hook 'tabulated-list-revert-hook 'oh-my-github-trending-repos-revert nil t)
+  (add-hook 'tabulated-list-revert-hook 'oh-my-github-trendings-revert nil t)
   (tabulated-list-init-header))
 
 ;; unload-feature hook, free C resources
@@ -513,24 +545,6 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
                      oh-my-github--log-buf-name))))
 
 ;;;###autoload
-(defun oh-my-github-star-list ()
-  "Display GitHub starred repositories in table view."
-  (interactive)
-  (with-current-buffer (get-buffer-create "*oh-my-github starred repositories*")
-    (oh-my-github-stars-mode)
-    (tabulated-list-print t)
-    (switch-to-buffer (current-buffer))))
-
-;;;###autoload
-(defun oh-my-github-repo-list ()
-  "Display GitHub owned repositories in table view."
-  (interactive)
-  (with-current-buffer (get-buffer-create "*oh-my-github owned repositories*")
-    (oh-my-github-repos-mode)
-    (tabulated-list-print t)
-    (switch-to-buffer (current-buffer))))
-
-;;;###autoload
 (defun oh-my-github-whoami (&optional username)
   "Display `username' information, or current user represented by GitHub personal access token(PAT)."
   (interactive (list (when current-prefix-arg
@@ -563,12 +577,30 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
 	  (switch-to-buffer buf))))
 
 ;;;###autoload
-(defun oh-my-github-trending-repo-list ()
+(defun oh-my-github-stars-list ()
+  "Display GitHub starred repositories in table view."
   (interactive)
-  (with-current-buffer (get-buffer-create (oh-my-github--trending-repo-buf-name))
-      (oh-my-github-trending-repos-mode)
-      (tabulated-list-print t)
-      (switch-to-buffer (current-buffer))))
+  (with-current-buffer (get-buffer-create "*oh-my-github starred repositories*")
+    (oh-my-github-stars-mode)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+;;;###autoload
+(defun oh-my-github-repos-list ()
+  "Display GitHub owned repositories in table view."
+  (interactive)
+  (with-current-buffer (get-buffer-create "*oh-my-github owned repositories*")
+    (oh-my-github-repos-mode)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+;;;###autoload
+(defun oh-my-github-trendings-list ()
+  (interactive)
+  (with-current-buffer (get-buffer-create (oh-my-github--trendings-buf-name))
+    (oh-my-github-trendings-mode)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
 
 (provide 'oh-my-github)
 
