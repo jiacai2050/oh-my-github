@@ -105,7 +105,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                                              "Russian" "ru"
                                                              "Spanish" "es"
                                                              "Ukrainian" "uk"))
-  "Copy from https://github.com/huchenme/github-trending-api/blob/master/src/spoken-languages.json")
+  "Port from https://github.com/huchenme/github-trending-api/blob/master/src/spoken-languages.json")
 
 (defconst oh-my-github--trendings-languages  #s(hash-table
                                                 test equal
@@ -158,8 +158,9 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                                       "Unix Assembly" "unix-assembly"
                                                       "Vim script" "vim-script"
                                                       "Vue" "vue"
-                                                      "WebAssembly" "webassembly"))
-  "Copy from https://github.com/huchenme/github-trending-api/blob/master/src/languages.json")
+                                                      "WebAssembly" "webassembly"
+                                                      "Zig" "zig"))
+  "Port from https://github.com/huchenme/github-trending-api/blob/master/src/languages.json")
 
 (defconst oh-my-github-pipe-eof "\n\n"
   "Same with PIPE_EOF in C API. Used to notify no more data will be written to pipe")
@@ -503,9 +504,9 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                                   (oh-my-github--log "oh-my-github-download: %s\n" output)
                                                   (when (string-match-p oh-my-github-pipe-eof output)
                                                     (delete-process proc))))))
-          (omg-dyn-download proc raw-url dest)
-          (message (format "Start downloading %s in background. Check %s buffer for progress." raw-url
-                           oh-my-github--log-buf-name))))
+          (when (omg-dyn-download proc raw-url dest)
+            (message (format "Start downloading %s in background.\nCheck %s buffer for progress." raw-url
+                             oh-my-github--log-buf-name)))))
     (user-error "There is no asset at point")))
 
 (defvar oh-my-github-assets-mode-map
@@ -536,9 +537,10 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                      (completing-read "Range: " oh-my-github--trendings-ranges)))
   (when (eq major-mode 'oh-my-github-trendings-mode)
     (let ((spoken-language-code (gethash spoken-language oh-my-github--trendings-spoken-languages
-                                         spoken-language)))
+                                         spoken-language))
+          (programming-lang (gethash language oh-my-github--trendings-languages language)))
       (setq-local oh-my-github-trendings-query-spoken-language spoken-language-code)
-      (setq-local oh-my-github-trendings-query-language language)
+      (setq-local oh-my-github-trendings-query-language programming-lang)
       (setq-local oh-my-github-trendings-query-range range))
     (tabulated-list-print t)
     (rename-buffer (oh-my-github--trendings-buf-name) t)))

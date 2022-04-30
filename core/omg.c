@@ -24,7 +24,8 @@ typedef struct {
 static void free_response(response *resp) {
   if (resp->memory) {
 #ifdef VERBOSE
-    printf("free response, body is %s\n", resp->memory);
+    printf("free response, body is %.*s\n", 512 * 2,
+           resp->memory); // only print first 512*2 bytes
 #endif
     free(resp->memory);
   }
@@ -196,8 +197,8 @@ omg_error omg_setup_context(const char *path, const char *github_token,
   if (!api_curl) {
     return (omg_error){.code = OMG_CODE_CURL, .message = "api curl init"};
   }
-#ifdef CURL_VERBOSE
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#ifdef VERBOSE
+  curl_easy_setopt(api_curl, CURLOPT_VERBOSE, 1L);
 #endif
   struct curl_slist *api_headers = NULL;
   char header_auth[128];
@@ -229,8 +230,8 @@ omg_error omg_setup_context(const char *path, const char *github_token,
   if (!trending_curl) {
     return (omg_error){.code = OMG_CODE_CURL, .message = "trending curl init"};
   }
-#ifdef CURL_VERBOSE
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#ifdef VERBOSE
+  curl_easy_setopt(trending_curl, CURLOPT_VERBOSE, 1L);
 #endif
   struct curl_slist *trending_headers = NULL;
   trending_headers = curl_slist_append(trending_headers, "x-pjax: true");

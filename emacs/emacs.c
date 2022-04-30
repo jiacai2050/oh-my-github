@@ -647,7 +647,8 @@ int emacs_module_init(runtime ert) {
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-download"),
                env->make_function(env, 3, 3, omg_dyn_download,
-                                  "Download file given a asset raw-url", NULL));
+                                  "Spawn a thread to download asset file",
+                                  NULL));
 
   lisp_funcall(env, "provide", lisp_symbol(env, FEATURE_NAME));
 
