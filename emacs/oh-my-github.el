@@ -94,7 +94,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
 (defconst oh-my-github--trendings-spoken-languages  #s(hash-table
                                                        test equal
-                                                       data ("Any" ""
+                                                       data ("Any" nil
                                                              "Chinese" "zh"
                                                              "Dutch" "nl"
                                                              "English" "en"
@@ -104,7 +104,62 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                                              "Polish" "pl"
                                                              "Russian" "ru"
                                                              "Spanish" "es"
-                                                             "Ukrainian" "uk")))
+                                                             "Ukrainian" "uk"))
+  "Copy from https://github.com/huchenme/github-trending-api/blob/master/src/spoken-languages.json")
+
+(defconst oh-my-github--trendings-languages  #s(hash-table
+                                                test equal
+                                                data ("Any" nil
+                                                      "C" "c"
+                                                      "Clojure" "clojure"
+                                                      "CMake" "cmake"
+                                                      "CoffeeScript" "coffeescript"
+                                                      "Common Lisp" "common-lisp"
+                                                      "Coq" "coq"
+                                                      "Dart" "dart"
+                                                      "Dockerfile" "dockerfile"
+                                                      "Emacs Lisp" "emacs-lisp"
+                                                      "GDB" "gdb"
+                                                      "Go" "go"
+                                                      "Haskell" "haskell"
+                                                      "Haxe" "haxe"
+                                                      "HTML" "html"
+                                                      "Java" "java"
+                                                      "JavaScript" "javascript"
+                                                      "JSON" "json"
+                                                      "Julia" "julia"
+                                                      "Jupyter Notebook" "jupyter-notebook"
+                                                      "Kotlin" "kotlin"
+                                                      "LLVM" "LLVM"
+                                                      "Lua" "lua"
+                                                      "Makefile" "makefile"
+                                                      "Markdown" "markdown"
+                                                      "Mathematica" "mathematica"
+                                                      "Matlab" "matlab"
+                                                      "Nginx" "nginx"
+                                                      "Nix" "nix"
+                                                      "NumPy" "numpy"
+                                                      "Objective-C" "objective-c"
+                                                      "OCaml" "ocaml"
+                                                      "Org" "org"
+                                                      "Perl" "perl"
+                                                      "PHP" "php"
+                                                      "PLSQL" "plsql"
+                                                      "PowerShell" "powershell"
+                                                      "Protocol Buffer" "protocol-buffer"
+                                                      "Python" "python"
+                                                      "Ruby" "ruby"
+                                                      "Rust" "rust"
+                                                      "Scala" "scala"
+                                                      "Shell" "shell"
+                                                      "SQL" "sql"
+                                                      "Swift" "swift"
+                                                      "TypeScript" "typescript"
+                                                      "Unix Assembly" "unix-assembly"
+                                                      "Vim script" "vim-script"
+                                                      "Vue" "vue"
+                                                      "WebAssembly" "webassembly"))
+  "Copy from https://github.com/huchenme/github-trending-api/blob/master/src/languages.json")
 
 (defconst oh-my-github-pipe-eof "\n\n"
   "Same with PIPE_EOF in C API. Used to notify no more data will be written to pipe")
@@ -168,9 +223,9 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
 (defun oh-my-github--trendings-buf-name ()
   (format "*oh-my-github [%s]-[%s]-[%s] trendings repos*"
-          (or oh-my-github-trendings-query-spoken-language "any")
-          (or oh-my-github-trendings-query-language "any")
-          oh-my-github-trendings-query-range))
+          (capitalize (or oh-my-github-trendings-query-spoken-language "any"))
+          (capitalize (or oh-my-github-trendings-query-language "any"))
+          (capitalize oh-my-github-trendings-query-range)))
 
 (defconst oh-my-github-whoami-col-sep ",,,")
 (defconst oh-my-github-whoami-row-sep "\n")
@@ -477,7 +532,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
 (defun oh-my-github-trendings-query (spoken-language language range)
   (interactive (list (completing-read  "Spoken language: " oh-my-github--trendings-spoken-languages)
-                     (read-string  "Programming Language(Any): ")
+                     (completing-read  "Programming Language: " oh-my-github--trendings-languages)
                      (completing-read "Range: " oh-my-github--trendings-ranges)))
   (when (eq major-mode 'oh-my-github-trendings-mode)
     (let ((spoken-language-code (gethash spoken-language oh-my-github--trendings-spoken-languages
