@@ -143,7 +143,7 @@ void print_error(omg_error err) {
 
 bool is_ok(omg_error err) { return err.code == OMG_CODE_OK; }
 
-const omg_error NO_ERROR = {.code = OMG_CODE_OK, .message = NULL};
+static const omg_error NO_ERROR = {.code = OMG_CODE_OK, .message = NULL};
 
 static bool empty_string(const char *s) {
   if (s) {

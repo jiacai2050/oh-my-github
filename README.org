@@ -19,6 +19,7 @@ There are mainly two user interfaces:
   - *Download release asset files*
 - CLI, TBD
   - *Sync*
+  - *Query trending repositories*
 
 * Features
 - Support local storage

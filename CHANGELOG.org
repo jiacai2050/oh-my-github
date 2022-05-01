@@ -9,6 +9,7 @@
 * master(unrelease)
 ** New Features
 - Query trending support spoken languages filter
+- CLI support args parse, both sync and trendings are supported now
 
 ** Internal Improvements
 - Trending API reuse =curl= instance
