@@ -1,4 +1,5 @@
 #include "../core/omg.h"
+#include "help.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,15 +8,7 @@
 static const omg_error NO_ERROR = {.code = OMG_CODE_OK};
 
 omg_error cli_print_help() {
-  printf("Usage:\n"
-         "  omg-cli [options]\n"
-         "\n"
-         "OPTIONS:\n"
-         "  -f, --db-file <DB-FILE>    Database path [required]\n"
-         "  -s, --sync                 Sync GitHub repositories into local "
-         "database\n"
-         "  -t, --trends  <lang:range> Query GitHub trendings\n"
-         "  -h, --help                 Print help information\n");
+  printf("%.*s\n", cli_help_txt_len, cli_help_txt);
   exit(1);
 }
 

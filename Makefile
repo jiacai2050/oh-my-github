@@ -15,8 +15,13 @@ ifeq ($(uname_S), Windows)
 endif
 
 CLI = omg-cli
-OBJECTS = $(CORE_DIR)/omg.o $(CLI_DIR)/cli.o $(EMACS_DIR)/emacs.o
-HEADERS = $(CORE_DIR)/create_table.h $(CORE_DIR)/omg.h
+COMMON_HEADERS = $(CORE_DIR)/omg.h $(CORE_DIR)/create_table.h
+
+CLI_OBJECTS = $(CORE_DIR)/omg.o $(CLI_DIR)/cli.o
+CLI_HEADERS = $(COMMON_HEADERS) $(CLI_DIR)/help.h
+EMACS_OBJECTS = $(CORE_DIR)/omg.o $(EMACS_DIR)/emacs.o
+EMACS_HEADERS = $(COMMON_HEADERS)
+
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix)
 LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
 # ASAN cannot be used with valgrind together
@@ -25,15 +30,9 @@ ifeq ($(ENABLE_ASAN), 1)
 endif
 CC = gcc
 
-$(CLI): $(OBJECTS)
-	@if [ X$(OMG_TEST) = X1 ]; then \
-		echo "[Linking] test mode..." && \
-		$(CC) -O1  $(OBJECTS) $(LDFLAGS) -o $(CLI) ;\
-	else \
-		$(CC) -O3 $(OBJECTS) $(LDFLAGS) -o $(CLI) ;\
-	fi
+.DEFAULT_GOAL := $(CLI)
 
-%.o: %.c $(HEADERS)
+%.o: %.c
 	@if [ X$(OMG_TEST) = X1 ]; then \
 		echo "[Compile] test mode..." && \
 		$(CC) -D VERBOSE -D OMG_TEST $(CFLAGS) -c $< -o $@ ;\
@@ -41,14 +40,25 @@ $(CLI): $(OBJECTS)
 		$(CC) $(CFLAGS) -c $< -o $@ ;\
 	fi
 
-core/create_table.h: core/create_table.sql
+$(CORE_DIR)/create_table.h: $(CORE_DIR)/create_table.sql
 	xxd -i $< | tac | sed '3s/$$/, 0x00/' | tac > $@
+
+$(CLI_DIR)/help.h: $(CLI_DIR)/help.txt
+	xxd -i $< > $@
+
+$(CLI): $(CLI_OBJECTS) $(CLI_HEADERS)
+	if [ X$(OMG_TEST) = X1 ]; then \
+		echo "[Linking] test mode..." && \
+		$(CC) -O1  $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI) ;\
+	else \
+		$(CC) -O3 $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI) ;\
+	fi
 
 memcheck:
 	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(CLI) /tmp/test.db
 
-$(SO_FILE): $(OBJECTS)
-	$(CC) -O3 -dynamiclib $(OBJECTS) $(LDFLAGS) -o $(SO_FILE)
+$(SO_FILE): $(EMACS_HEADERS) $(EMACS_OBJECTS)
+	$(CC) -O3 -dynamiclib $(EMACS_OBJECTS) $(LDFLAGS) -o $(SO_FILE)
 
 emacs-dyn: $(SO_FILE)
 	@echo "Emacs dynamic module saved to $(SO_FILE)"
@@ -62,4 +72,4 @@ ifeq ($(uname_S), Linux)
 endif
 
 clean:
-	rm -f $(CLI) $(SO_FILE) $(OBJECTS)
+	rm -f $(CLI) $(SO_FILE) $(EMACS_OBJECTS) $(CLI_OBJECTS)
