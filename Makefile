@@ -33,12 +33,11 @@ CC = gcc
 .DEFAULT_GOAL := $(CLI)
 
 %.o: %.c
-	@if [ X$(OMG_TEST) = X1 ]; then \
-		echo "[Compile] test mode..." && \
-		$(CC) -D VERBOSE -D OMG_TEST $(CFLAGS) -c $< -o $@ ;\
-	else \
-		$(CC) $(CFLAGS) -c $< -o $@ ;\
-	fi
+ifeq ($(OMG_TEST), 1)
+	$(CC) -D VERBOSE -D OMG_TEST $(CFLAGS) -c $< -o $@
+else
+	$(CC) $(CFLAGS) -c $< -o $@
+endif
 
 $(CORE_DIR)/create_table.h: $(CORE_DIR)/create_table.sql
 	xxd -i $< | tac | sed '3s/$$/, 0x00/' | tac > $@
@@ -47,15 +46,14 @@ $(CLI_DIR)/help.h: $(CLI_DIR)/help.txt
 	xxd -i $< > $@
 
 $(CLI): $(CLI_OBJECTS) $(CLI_HEADERS)
-	if [ X$(OMG_TEST) = X1 ]; then \
-		echo "[Linking] test mode..." && \
-		$(CC) -O1  $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI) ;\
-	else \
-		$(CC) -O3 $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI) ;\
-	fi
+ifeq ($(OMG_TEST), 1)
+	$(CC) -O1  $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI)
+else
+	$(CC) -O3 $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI)
+endif
 
 memcheck:
-	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(CLI) /tmp/test.db
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(CLI) -f /tmp/test.db
 
 $(SO_FILE): $(EMACS_HEADERS) $(EMACS_OBJECTS)
 	$(CC) -O3 -dynamiclib $(EMACS_OBJECTS) $(LDFLAGS) -o $(SO_FILE)
