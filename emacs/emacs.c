@@ -150,8 +150,8 @@ omg_dyn_query_common(emacs_env *env, const char *first_column, omg_repo repo) {
   return row;
 }
 
-emacs_value omg_dyn_query_repos(emacs_env *env, ptrdiff_t nargs,
-                                emacs_value *args, void *data) {
+emacs_value omg_dyn_query_created_repos(emacs_env *env, ptrdiff_t nargs,
+                                        emacs_value *args, void *data) {
   ENSURE_SETUP(env);
   omg_auto_char keyword = NULL;
   omg_auto_char lang = NULL;
@@ -163,8 +163,8 @@ emacs_value omg_dyn_query_repos(emacs_env *env, ptrdiff_t nargs,
   }
 
   ENSURE_NONLOCAL_EXIT(env);
-  omg_auto_repo_list repo_lst = omg_new_repo_list();
-  omg_error err = omg_query_repos(ctx, keyword, lang, &repo_lst);
+  omg_auto_repo_list repo_lst = {};
+  omg_error err = omg_query_created_repos(ctx, keyword, lang, &repo_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
@@ -179,8 +179,8 @@ emacs_value omg_dyn_query_repos(emacs_env *env, ptrdiff_t nargs,
   return repo_vector;
 }
 
-emacs_value omg_dyn_query_stars(emacs_env *env, ptrdiff_t nargs,
-                                emacs_value *args, void *data) {
+emacs_value omg_dyn_query_starred_repos(emacs_env *env, ptrdiff_t nargs,
+                                        emacs_value *args, void *data) {
   ENSURE_SETUP(env);
   omg_auto_char keyword = NULL;
   omg_auto_char lang = NULL;
@@ -193,8 +193,8 @@ emacs_value omg_dyn_query_stars(emacs_env *env, ptrdiff_t nargs,
 
   ENSURE_NONLOCAL_EXIT(env);
 
-  omg_auto_star_list star_lst = omg_new_star_list();
-  omg_error err = omg_query_stars(ctx, keyword, lang, &star_lst);
+  omg_auto_starred_repo_list star_lst = {};
+  omg_error err = omg_query_starred_repos(ctx, keyword, lang, &star_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
@@ -222,7 +222,7 @@ emacs_value omg_dyn_query_trendings(emacs_env *env, ptrdiff_t nargs,
 
   ENSURE_NONLOCAL_EXIT(env);
 
-  omg_auto_repo_list repo_lst = omg_new_repo_list();
+  omg_auto_repo_list repo_lst = {};
   omg_error err = omg_query_trending(ctx, spoken_lang, lang, since, &repo_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
@@ -248,14 +248,14 @@ emacs_value omg_dyn_query_trendings(emacs_env *env, ptrdiff_t nargs,
   return repo_vector;
 }
 
-emacs_value omg_dyn_unstar(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
-                           void *data) {
+emacs_value omg_dyn_unstar_repo(emacs_env *env, ptrdiff_t nargs,
+                                emacs_value *args, void *data) {
   ENSURE_SETUP(env);
   intmax_t repo_id = env->extract_integer(env, args[0]);
 
   ENSURE_NONLOCAL_EXIT(env);
 
-  omg_error err = omg_unstar(ctx, repo_id);
+  omg_error err = omg_unstar_repo(ctx, repo_id);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
@@ -268,7 +268,7 @@ static void *omg_dyn_sync_background(void *ptr) {
   char *msg = "Start syncing, wait a few seconds...";
   write(pipe, msg, strlen(msg));
 
-  omg_error err = omg_sync_stars(ctx);
+  omg_error err = omg_sync_starred_repos(ctx);
   if (!is_ok(err)) {
     write(pipe, err.message, strlen(err.message));
   } else {
@@ -276,7 +276,7 @@ static void *omg_dyn_sync_background(void *ptr) {
     write(pipe, msg, strlen(msg));
   }
 
-  err = omg_sync_repos(ctx);
+  err = omg_sync_created_repos(ctx);
   if (!is_ok(err)) {
     write(pipe, err.message, strlen(err.message));
   } else {
@@ -325,7 +325,7 @@ emacs_value omg_dyn_whoami(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 
   ENSURE_NONLOCAL_EXIT(env);
 
-  omg_auto_user who = omg_new_user();
+  omg_auto_user who = {};
   omg_error err = omg_whoami(ctx, username, &who);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
@@ -391,7 +391,7 @@ emacs_value omg_dyn_query_commits(emacs_env *env, ptrdiff_t nargs,
   int limit = env->extract_integer(env, args[1]);
   ENSURE_NONLOCAL_EXIT(env);
 
-  omg_auto_commit_list commit_lst = omg_new_commit_list();
+  omg_auto_commit_list commit_lst = {};
   omg_error err = omg_query_commits(ctx, full_name, limit, &commit_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
@@ -435,7 +435,7 @@ emacs_value omg_dyn_query_releases(emacs_env *env, ptrdiff_t nargs,
   int limit = env->extract_integer(env, args[1]);
   ENSURE_NONLOCAL_EXIT(env);
 
-  omg_auto_release_list release_lst = omg_new_release_list();
+  omg_auto_release_list release_lst = {};
   omg_error err = omg_query_releases(ctx, full_name, limit, &release_lst);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
@@ -609,33 +609,32 @@ int emacs_module_init(runtime ert) {
                                   "Teardown omg-dyn", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-sync"),
-               env->make_function(env, 1, 1, omg_dyn_sync,
-                                  "Sync Github repositories to local database",
-                                  NULL));
-
-  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-whoami"),
                env->make_function(
-                   env, 0, 1, omg_dyn_whoami,
-                   "Return user represented by GitHub personal access token",
+                   env, 1, 1, omg_dyn_sync,
+                   "Sync Github repositories/gists to local database", NULL));
+
+  lisp_funcall(
+      env, "fset", lisp_symbol(env, "omg-dyn-whoami"),
+      env->make_function(
+          env, 0, 1, omg_dyn_whoami,
+          "Fetch user information represented by GitHub personal access token",
+          NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-starred-repos"),
+               env->make_function(
+                   env, 0, 2, omg_dyn_query_starred_repos,
+                   "Query starred repositories based on keyword or language",
                    NULL));
 
-  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-stars"),
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-created-repos"),
                env->make_function(
-                   env, 0, 2, omg_dyn_query_stars,
-                   "Query GitHub stars based on keyword or language", NULL));
+                   env, 0, 2, omg_dyn_query_created_repos,
+                   "Query created repositories based on keyword or language",
+                   NULL));
 
-  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-repos"),
-               env->make_function(
-                   env, 0, 2, omg_dyn_query_repos,
-                   "Query GitHub repos based on keyword or language", NULL));
-
-  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-trendings"),
-               env->make_function(env, 3, 3, omg_dyn_query_trendings,
-                                  "Query GitHub trendings", NULL));
-
-  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar"),
-               env->make_function(env, 1, 1, omg_dyn_unstar,
-                                  "Delete GitHub star", NULL));
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar-repo"),
+               env->make_function(env, 1, 1, omg_dyn_unstar_repo,
+                                  "Delete starred repository", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-commits"),
                env->make_function(env, 2, 2, omg_dyn_query_commits,
@@ -649,6 +648,10 @@ int emacs_module_init(runtime ert) {
                env->make_function(env, 3, 3, omg_dyn_download,
                                   "Spawn a thread to download asset file",
                                   NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-trendings"),
+               env->make_function(env, 3, 3, omg_dyn_query_trendings,
+                                  "Query GitHub trendings", NULL));
 
   lisp_funcall(env, "provide", lisp_symbol(env, FEATURE_NAME));
 

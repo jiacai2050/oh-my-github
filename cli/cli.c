@@ -18,12 +18,21 @@ omg_error cli_sync(const char *token, const char *db_path) {
   if (!is_ok(err)) {
     return err;
   }
-  err = omg_sync_stars(ctx);
+  /* err = omg_sync_starred_repos(ctx); */
+  /* if (!is_ok(err)) { */
+  /*   return err; */
+  /* } */
+
+  /* err = omg_sync_created_repos(ctx); */
+  /* if (!is_ok(err)) { */
+  /*   return err; */
+  /* } */
+
+  err = omg_sync_created_gists(ctx);
   if (!is_ok(err)) {
     return err;
   }
-
-  return omg_sync_repos(ctx);
+  return omg_sync_starred_gists(ctx);
 }
 
 omg_error cli_trendings(const char *token, const char *db_path,
@@ -34,7 +43,7 @@ omg_error cli_trendings(const char *token, const char *db_path,
   if (!is_ok(err)) {
     return err;
   }
-  omg_auto_repo_list lst = omg_new_repo_list();
+  omg_auto_repo_list lst = {};
   err = omg_query_trending(ctx, NULL, NULL, "daily", &lst);
   if (!is_ok(err)) {
     return err;
@@ -123,7 +132,7 @@ int main(int argc, char **argv) {
     cli_print_help();
   }
 
-  /* omg_auto_repo_list lst; */
+  /* omg_auto_created_repo_list lst; */
   /* err = omg_query_repos(ctx, "vagrant", NULL, &lst); */
   /* err = omg_query_repos(ctx, NULL, "Rust", &lst); */
   /* if (!is_ok(err)) { */

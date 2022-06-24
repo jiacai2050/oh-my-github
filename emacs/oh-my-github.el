@@ -166,10 +166,10 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   "Same with PIPE_EOF in C API. Used to notify no more data will be written to pipe")
 
 (defvar-local oh-my-github-query-keyword ""
-  "The case-insensitive keyword used when query repos.")
+  "The case-insensitive keyword used when query repositories.")
 
 (defvar-local oh-my-github-query-language ""
-  "The case-insensitive programming language used when query repos.")
+  "The case-insensitive programming language used when query repositories.")
 
 (defvar-local oh-my-github-query-repo-full-name ""
   "The repository full-name used when query commits/releases.")
@@ -190,12 +190,12 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
     (end-of-buffer)
     (insert (apply 'format fmt args))))
 
-(defun oh-my-github--query-stars ()
-  (seq-into (omg-dyn-query-stars oh-my-github-query-keyword oh-my-github-query-language)
+(defun oh-my-github--query-starred-repos ()
+  (seq-into (omg-dyn-query-starred-repos oh-my-github-query-keyword oh-my-github-query-language)
             'list))
 
-(defun oh-my-github--query-repos ()
-  (seq-into (omg-dyn-query-repos oh-my-github-query-keyword oh-my-github-query-language)
+(defun oh-my-github--query-created-repos ()
+  (seq-into (omg-dyn-query-created-repos oh-my-github-query-keyword oh-my-github-query-language)
             'list))
 
 (defun oh-my-github--query-commits ()
@@ -255,13 +255,13 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
         (message "Copied %s" url))
     (user-error "There is no repository at point")))
 
-(defun oh-my-github-unstar ()
+(defun oh-my-github-unstar-repo ()
   "Unstar repository at point."
   (interactive)
   (if-let ((entry (tabulated-list-get-entry))
            (full-name (elt entry 1)))
       (when (yes-or-no-p (format "Are you really want to unstar %s?" full-name))
-        (omg-dyn-unstar (string-to-number (tabulated-list-get-id)))
+        (omg-dyn-unstar-repo (string-to-number (tabulated-list-get-id)))
         (tabulated-list-delete-entry)
         (message "Unstarred %s" full-name))
     (user-error "There is no repository at point")))
@@ -275,8 +275,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                   nil nil oh-my-github-query-keyword)
                      (read-string (format "Language(%s): " oh-my-github-query-language)
                                   nil nil oh-my-github-query-language)))
-  (when (or (eq major-mode 'oh-my-github-stars-mode)
-            (eq major-mode 'oh-my-github-repos-mode))
+  (when (derived-mode-p 'oh-my-github-repos-mode)
     (setq-local oh-my-github-query-keyword keyword)
     (setq-local oh-my-github-query-language language)
     (tabulated-list-print t)))
@@ -324,22 +323,22 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
     map)
   "Local keymap for oh-my-github-repos mode buffers.")
 
-(define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github repos" "Manage GitHub owned repositories"
+(define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github created repos" "Manage created repositories"
   (oh-my-github--init-repos-tabulated-list '("CreatedAt" 20 t)
                                            (cons "CreatedAt" t)
-                                           'oh-my-github--query-repos))
+                                           'oh-my-github--query-created-repos))
 
-(defvar oh-my-github-stars-mode-map
+(defvar oh-my-github-starred-repos-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map oh-my-github-repos-mode-map)
-    (define-key map (kbd "u") 'oh-my-github-unstar)
+    (define-key map (kbd "u") 'oh-my-github-unstar-repo)
     map)
   "Local keymap for oh-my-github-stars mode buffers.")
 
-(define-derived-mode oh-my-github-stars-mode oh-my-github-repos-mode "oh-my-github stars" "Manage GitHub starred repositories"
+(define-derived-mode oh-my-github-starred-repos-mode oh-my-github-repos-mode "oh-my-github starred repos" "Manage starred repositories"
   (oh-my-github--init-repos-tabulated-list '("StarredAt" 20 t)
                                            (cons "StarredAt" t)
-                                           'oh-my-github--query-stars))
+                                           'oh-my-github--query-starred-repos))
 
 (defun oh-my-github--get-commit-sha ()
   (when-let ((entry (tabulated-list-get-entry)))
@@ -586,8 +585,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
 ;;;###autoload
 (defun oh-my-github-sync ()
-  "Sync GitHub repositories(both owned and starred) into local database.
-Note: Emacs maybe hang a while depending on how many repositories you have."
+  "Sync GitHub repositories/gists(both created and starred) into local database."
   (interactive)
   (let* ((buf (get-buffer-create "*oh-my-github-sync*"))
          (sync-proc (make-pipe-process :name "oh-my-github-sync"
@@ -598,7 +596,7 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
                                                    (delete-process proc)))
                                        :buffer buf)))
     (omg-dyn-sync sync-proc)
-    (message (format "Start syncing repositories in background. Check %s buffer for progress."
+    (message (format "Start syncing repositories/gists in background. Check %s buffer for progress."
                      oh-my-github--log-buf-name))))
 
 ;;;###autoload
@@ -634,25 +632,25 @@ Note: Emacs maybe hang a while depending on how many repositories you have."
 	  (switch-to-buffer buf))))
 
 ;;;###autoload
-(defun oh-my-github-stars-list ()
-  "Display GitHub starred repositories in table view."
+(defun oh-my-github-list-created-repositories ()
+  "Display created repositories in table view."
   (interactive)
-  (with-current-buffer (get-buffer-create "*oh-my-github starred repositories*")
-    (oh-my-github-stars-mode)
-    (tabulated-list-print t)
-    (switch-to-buffer (current-buffer))))
-
-;;;###autoload
-(defun oh-my-github-repos-list ()
-  "Display GitHub owned repositories in table view."
-  (interactive)
-  (with-current-buffer (get-buffer-create "*oh-my-github owned repositories*")
+  (with-current-buffer (get-buffer-create "*oh-my-github created repositories*")
     (oh-my-github-repos-mode)
     (tabulated-list-print t)
     (switch-to-buffer (current-buffer))))
 
 ;;;###autoload
-(defun oh-my-github-trendings-list ()
+(defun oh-my-github-list-starred-repositories ()
+  "Display starred repositories in table view."
+  (interactive)
+  (with-current-buffer (get-buffer-create "*oh-my-github starred repositories*")
+    (oh-my-github-starred-repos-mode)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+;;;###autoload
+(defun oh-my-github-list-trendings ()
   (interactive)
   (with-current-buffer (get-buffer-create (oh-my-github--trendings-buf-name))
     (oh-my-github-trendings-mode)

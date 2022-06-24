@@ -133,10 +133,6 @@ struct omg_context {
   /* int timeout; */
 };
 
-omg_error omg_new_error() {
-  return (omg_error){.code = OMG_CODE_OK, .message = NULL};
-}
-
 void print_error(omg_error err) {
   printf("code:%d, msg:%s\n", err.code, err.message);
 }
@@ -351,18 +347,6 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
     }                                                                          \
   })
 
-omg_repo omg_new_repo() {
-  return (omg_repo){
-      .full_name = NULL,
-      .description = NULL,
-      .created_at = NULL,
-      .license = NULL,
-      .pushed_at = NULL,
-      .lang = NULL,
-      .homepage = NULL,
-  };
-}
-
 void omg_free_repo(omg_repo *repo) {
   if (repo) {
 #ifdef VERBOSE
@@ -376,10 +360,6 @@ void omg_free_repo(omg_repo *repo) {
     FREE_OBJ_FIELD(repo, lang);
     FREE_OBJ_FIELD(repo, homepage);
   }
-}
-
-omg_repo_list omg_new_repo_list() {
-  return (omg_repo_list){.repo_array = NULL, .length = 0};
 }
 
 void omg_free_repo_list(omg_repo_list *repo_lst) {
@@ -495,14 +475,15 @@ static omg_error fetch_repos_by_page(omg_context ctx, size_t page_num,
   return NO_ERROR;
 }
 
-static omg_error save_my_repos(omg_context ctx, omg_repo_list repo_lst) {
+static omg_error save_created_repos(omg_context ctx, omg_repo_list repo_lst) {
   omg_error err = save_repos(ctx, repo_lst);
   if (!is_ok(err)) {
     return err;
   }
 
   auto_sqlite3_stmt stmt = NULL;
-  const char *sql = "insert or ignore into omg_my_repo(repo_id) values (?1)";
+  const char *sql =
+      "insert or ignore into omg_created_repo(repo_id) values (?1)";
   int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
   if (rc) {
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
@@ -523,7 +504,7 @@ static omg_error save_my_repos(omg_context ctx, omg_repo_list repo_lst) {
   return NO_ERROR;
 }
 
-omg_error omg_sync_repos(omg_context ctx) {
+omg_error omg_sync_created_repos(omg_context ctx) {
   size_t page_num = 1;
   while (true) {
 #ifdef OMG_TEST
@@ -531,12 +512,12 @@ omg_error omg_sync_repos(omg_context ctx) {
       break;
     }
 #endif
-    omg_auto_repo_list repo_lst = omg_new_repo_list();
+    omg_auto_repo_list repo_lst = {};
     omg_error err = fetch_repos_by_page(ctx, page_num++, &repo_lst);
     if (!is_ok(err)) {
       return err;
     }
-    err = save_my_repos(ctx, repo_lst);
+    err = save_created_repos(ctx, repo_lst);
     if (!is_ok(err)) {
       return err;
     }
@@ -549,14 +530,16 @@ omg_error omg_sync_repos(omg_context ctx) {
   return NO_ERROR;
 }
 
-static omg_error prepare_query_sql(omg_context ctx, bool is_star,
-                                   const char *keyword, const char *language,
-                                   sqlite3_stmt **out) {
+static omg_error prepare_query_repos_sql(omg_context ctx, bool is_star,
+                                         const char *keyword,
+                                         const char *language,
+                                         sqlite3_stmt **out) {
   omg_auto_char sql = malloc(SQL_DEFAULT_LEN);
   const char *first_column =
       is_star ? "datetime(starred_at, 'localtime') as starred_at"
               : "1"; // placehold
-  const char *table_name = is_star ? "omg_my_star_view" : "omg_my_repo_view";
+  const char *table_name =
+      is_star ? "omg_starred_repo_view" : "omg_created_repo_view";
   sprintf(sql,
           "select %s,"
           "id,full_name,description,private,"
@@ -610,7 +593,7 @@ static omg_error prepare_query_sql(omg_context ctx, bool is_star,
 }
 
 static omg_repo repo_from_db(sqlite3_stmt *stmt) {
-  omg_repo repo = omg_new_repo();
+  omg_repo repo = {};
   int column = 1;
   repo.id = sqlite3_column_int(stmt, column++);
   repo.full_name = strdup_when_not_null(sqlite3_column_text(stmt, column++));
@@ -628,10 +611,10 @@ static omg_repo repo_from_db(sqlite3_stmt *stmt) {
   return repo;
 }
 
-omg_error omg_query_repos(omg_context ctx, const char *keyword,
-                          const char *language, omg_repo_list *out) {
+omg_error omg_query_created_repos(omg_context ctx, const char *keyword,
+                                  const char *language, omg_repo_list *out) {
   auto_sqlite3_stmt stmt = NULL;
-  omg_error err = prepare_query_sql(ctx, false, keyword, language, &stmt);
+  omg_error err = prepare_query_repos_sql(ctx, false, keyword, language, &stmt);
   if (!is_ok(err)) {
     return err;
   }
@@ -660,11 +643,7 @@ omg_error omg_query_repos(omg_context ctx, const char *keyword,
 /* GitHub stars */
 /****************/
 
-omg_star omg_new_star() {
-  return (omg_star){.starred_at = NULL, .repo = omg_new_repo()};
-}
-
-void omg_free_star(omg_star *star) {
+void omg_free_starred_repo(omg_starred_repo *star) {
   if (star) {
 #ifdef VERBOSE
     printf("free omg_star, starred_at is %s\n", star->starred_at);
@@ -674,25 +653,21 @@ void omg_free_star(omg_star *star) {
   }
 }
 
-omg_star_list omg_new_star_list() {
-  return (omg_star_list){.star_array = NULL, .length = 0};
-}
-
-void omg_free_star_list(omg_star_list *star_list) {
+void omg_free_starred_repo_list(omg_starred_repo_list *star_list) {
   if (star_list) {
 #ifdef VERBOSE
     printf("free omg_star_list, length is %zu\n", star_list->length);
 #endif
 
     for (size_t i = 0; i < star_list->length; i++) {
-      omg_free_star(&(star_list->star_array[i]));
+      omg_free_starred_repo(&(star_list->star_array[i]));
     }
     free(star_list->star_array);
   }
 }
 
-static omg_error fetch_stars_by_page(omg_context ctx, size_t page_num,
-                                     omg_star_list *out) {
+static omg_error fetch_starred_repos_by_page(omg_context ctx, size_t page_num,
+                                             omg_starred_repo_list *out) {
   char url[128];
   sprintf(url, "%s/user/starred?type=all&per_page=%zu&page=%zu", API_ROOT,
           PER_PAGE, page_num);
@@ -703,22 +678,23 @@ static omg_error fetch_stars_by_page(omg_context ctx, size_t page_num,
   }
 
   size_t resp_len = json_array_size(resp);
-  omg_star *stars = malloc(sizeof(omg_star) * resp_len);
+  omg_starred_repo *stars = malloc(sizeof(omg_starred_repo) * resp_len);
   for (size_t i = 0; i < resp_len; i++) {
     json_t *one_star = json_array_get(resp, i);
-    stars[i] =
-        (omg_star){.repo = repo_from_json(json_object_get(one_star, "repo")),
-                   .starred_at = dup_json_string(one_star, "starred_at")};
+    stars[i] = (omg_starred_repo){
+        .repo = repo_from_json(json_object_get(one_star, "repo")),
+        .starred_at = dup_json_string(one_star, "starred_at")};
   }
-  *out = (omg_star_list){.star_array = stars, .length = resp_len};
+  *out = (omg_starred_repo_list){.star_array = stars, .length = resp_len};
 
   return NO_ERROR;
 }
 
-omg_error omg_query_stars(omg_context ctx, const char *keyword,
-                          const char *language, omg_star_list *out_lst) {
+omg_error omg_query_starred_repos(omg_context ctx, const char *keyword,
+                                  const char *language,
+                                  omg_starred_repo_list *out_lst) {
   auto_sqlite3_stmt stmt = NULL;
-  omg_error err = prepare_query_sql(ctx, true, keyword, language, &stmt);
+  omg_error err = prepare_query_repos_sql(ctx, true, keyword, language, &stmt);
   if (!is_ok(err)) {
     return err;
   }
@@ -728,12 +704,12 @@ omg_error omg_query_stars(omg_context ctx, const char *keyword,
     rows_count++;
   }
 
-  omg_star *star_arr = malloc(sizeof(omg_star) * rows_count);
+  omg_starred_repo *star_arr = malloc(sizeof(omg_starred_repo) * rows_count);
   sqlite3_reset(stmt);
   size_t row = 0;
   int rc = 0;
   while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-    omg_repo repo = omg_new_repo();
+    omg_repo repo = {};
     {
       int column = 1;
       repo.id = sqlite3_column_int(stmt, column++);
@@ -755,7 +731,7 @@ omg_error omg_query_stars(omg_context ctx, const char *keyword,
       repo.size = sqlite3_column_int(stmt, column++);
     };
 
-    star_arr[row++] = (omg_star){
+    star_arr[row++] = (omg_starred_repo){
         .starred_at = strdup_when_not_null(sqlite3_column_text(stmt, 0)),
         .repo = repo,
     };
@@ -765,11 +741,13 @@ omg_error omg_query_stars(omg_context ctx, const char *keyword,
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
   }
 
-  *out_lst = (omg_star_list){.star_array = star_arr, .length = rows_count};
+  *out_lst =
+      (omg_starred_repo_list){.star_array = star_arr, .length = rows_count};
   return NO_ERROR;
 }
 
-static omg_error save_my_stars(omg_context ctx, omg_star_list star_lst) {
+static omg_error save_starred_repos(omg_context ctx,
+                                    omg_starred_repo_list star_lst) {
   omg_repo *repo_arr = malloc(sizeof(omg_repo) * star_lst.length);
   for (int i = 0; i < star_lst.length; i++) {
     repo_arr[i] = star_lst.star_array[i].repo;
@@ -783,7 +761,7 @@ static omg_error save_my_stars(omg_context ctx, omg_star_list star_lst) {
 
   auto_sqlite3_stmt stmt = NULL;
   const char *sql =
-      "insert into omg_my_star(starred_at, repo_id) values (?1, ?2)"
+      "insert into omg_starred_repo(starred_at, repo_id) values (?1, ?2)"
       "on conflict(repo_id)"
       "do update set starred_at = ?1";
   int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
@@ -792,7 +770,7 @@ static omg_error save_my_stars(omg_context ctx, omg_star_list star_lst) {
   }
 
   for (int i = 0; i < star_lst.length; i++) {
-    omg_star star = star_lst.star_array[i];
+    omg_starred_repo star = star_lst.star_array[i];
     sqlite3_bind_text(stmt, 1, star.starred_at, -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 2, star.repo.id);
     rc = sqlite3_step(stmt);
@@ -807,7 +785,7 @@ static omg_error save_my_stars(omg_context ctx, omg_star_list star_lst) {
   return NO_ERROR;
 }
 
-omg_error omg_sync_stars(omg_context ctx) {
+omg_error omg_sync_starred_repos(omg_context ctx) {
   size_t page_num = 1;
   while (true) {
 #ifdef OMG_TEST
@@ -815,12 +793,12 @@ omg_error omg_sync_stars(omg_context ctx) {
       break;
     }
 #endif
-    omg_auto_star_list star_lst = omg_new_star_list();
-    omg_error err = fetch_stars_by_page(ctx, page_num++, &star_lst);
+    omg_auto_starred_repo_list star_lst = {};
+    omg_error err = fetch_starred_repos_by_page(ctx, page_num++, &star_lst);
     if (!is_ok(err)) {
       return err;
     }
-    err = save_my_stars(ctx, star_lst);
+    err = save_starred_repos(ctx, star_lst);
     if (!is_ok(err)) {
       return err;
     }
@@ -833,7 +811,7 @@ omg_error omg_sync_stars(omg_context ctx) {
   return NO_ERROR;
 }
 
-omg_error omg_unstar(omg_context ctx, size_t repo_id) {
+omg_error omg_unstar_repo(omg_context ctx, size_t repo_id) {
   const char *sql = "select full_name from omg_repo where id = ?";
   auto_sqlite3_stmt stmt = NULL;
   int rc = sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL);
@@ -851,7 +829,7 @@ omg_error omg_unstar(omg_context ctx, size_t repo_id) {
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
   }
 
-  sql = "delete from omg_my_star where repo_id = ?";
+  sql = "delete from omg_starred_repo where repo_id = ?";
   if (sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL)) {
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
   }
@@ -863,20 +841,6 @@ omg_error omg_unstar(omg_context ctx, size_t repo_id) {
   char url[128];
   sprintf(url, "%s/user/starred/%s", API_ROOT, full_name);
   return omg_request(ctx, DELETE_METHOD, url, NULL, NULL);
-}
-
-omg_user omg_new_user() {
-  return (omg_user){
-      .login = NULL,
-      .name = NULL,
-      .company = NULL,
-      .blog = NULL,
-      .location = NULL,
-      .email = NULL,
-      .bio = NULL,
-      .twitter_username = NULL,
-      .created_at = NULL,
-  };
 }
 
 void omg_free_user(omg_user *user) {
@@ -956,19 +920,11 @@ omg_error omg_whoami(omg_context ctx, const char *username, omg_user *out) {
   return NO_ERROR;
 }
 
-omg_commit omg_new_commit() {
-  return (omg_commit){.sha = NULL, .message = NULL};
-}
-
 void omg_free_commit(omg_commit *commit) {
   if (commit) {
     FREE_OBJ_FIELD(commit, sha);
     FREE_OBJ_FIELD(commit, message);
   }
-}
-
-omg_commit_list omg_new_commit_list() {
-  return (omg_commit_list){.commit_array = NULL, .length = 0};
 }
 
 void omg_free_commit_list(omg_commit_list *commit_lst) {
@@ -1013,27 +969,11 @@ omg_error omg_query_commits(omg_context ctx, const char *full_name, int limit,
 
 // releases
 
-omg_release_asset omg_new_release_asset() {
-  return (omg_release_asset){.name = NULL, .download_url = NULL};
-}
-
 void omg_free_release_asset(omg_release_asset *release_asset) {
   if (release_asset) {
     FREE_OBJ_FIELD(release_asset, name);
     FREE_OBJ_FIELD(release_asset, download_url);
   }
-}
-
-omg_release omg_new_release() {
-  return (omg_release){
-      .name = NULL,
-      .login = NULL,
-      .tag_name = NULL,
-      .body = NULL,
-      .published_at = NULL,
-      .asset_array = NULL,
-      .asset_length = 0,
-  };
 }
 
 void omg_free_release(omg_release *release) {
@@ -1050,10 +990,6 @@ void omg_free_release(omg_release *release) {
       free(release->asset_array);
     }
   }
-}
-
-omg_release_list omg_new_release_list() {
-  return (omg_release_list){.release_array = NULL, .length = 0};
 }
 
 void omg_free_release_list(omg_release_list *release_lst) {
@@ -1162,7 +1098,7 @@ static omg_error omg_parse_trending(omg_context ctx, const char *html,
       matched[j] = buf;
     }
 
-    omg_repo repo = omg_new_repo();
+    omg_repo repo = {};
     repo.description = matched[1];
     repo.full_name = matched[2];
     omg_auto_char current_stars = matched[3];
@@ -1220,4 +1156,156 @@ omg_error omg_query_trending(omg_context ctx, const char *spoken_lang,
   }
 
   return NO_ERROR;
+}
+
+void omg_free_gist(omg_gist *gist) {
+  if (gist) {
+#ifdef VERBOSE
+    printf("free gist, id is %s\n", gist->id);
+#endif
+    FREE_OBJ_FIELD(gist, id);
+    FREE_OBJ_FIELD(gist, created_at);
+    FREE_OBJ_FIELD(gist, description);
+    for (size_t i = 0; i < gist->file_length; i++) {
+      omg_gist_file *file = &gist->file_array[i];
+      FREE_OBJ_FIELD(file, filename);
+      FREE_OBJ_FIELD(file, type);
+      FREE_OBJ_FIELD(file, language);
+      FREE_OBJ_FIELD(file, raw_url);
+    }
+    free(gist->file_array);
+  }
+}
+
+void omg_free_gist_list(omg_gist_list *lst) {
+  for (size_t i = 0; i < lst->length; i++) {
+    omg_free_gist(&lst->gist_array[i]);
+  }
+  free(lst->gist_array);
+}
+
+static omg_error fetch_gists_by_page(omg_context ctx, size_t page_num,
+                                     bool is_star, omg_gist_list *out) {
+
+  char url[128];
+  sprintf(url, "%s/gists%s?per_page=%zu&page=%zu", API_ROOT,
+          is_star ? "/starred" : "", PER_PAGE, page_num);
+  json_auto_t *resp = NULL;
+  omg_error err = omg_request(ctx, GET_METHOD, url, NULL, &resp);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  size_t resp_len = json_array_size(resp);
+  omg_gist *gist_array = malloc(sizeof(omg_gist) * resp_len);
+  for (size_t i = 0; i < resp_len; i++) {
+    json_t *one_gist = json_array_get(resp, i);
+    gist_array[i] = (omg_gist){
+        .id = dup_json_string(one_gist, "id"),
+        .created_at = dup_json_string(one_gist, "created_at"),
+        .description = dup_json_string(one_gist, "description"),
+        .public = json_boolean_value(json_object_get(one_gist, "created_at")),
+        ._file_as_json = json_dumps(json_object_get(one_gist, "files"), 0),
+    };
+  }
+  *out = (omg_gist_list){.gist_array = gist_array, .length = resp_len};
+  return NO_ERROR;
+}
+
+static omg_error omg_save_gists_common(omg_context ctx, omg_gist_list lst) {
+  const char *sql =
+      "insert into omg_gist(id,created_at,description,files,public)"
+      "values(?1,?2,?3,?4,?5)"
+      "on conflict(id)"
+      "do update set "
+      "description=?3, files=?4, public=?5";
+  auto_sqlite3_stmt stmt = NULL;
+  int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
+  if (rc) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+  for (size_t i = 0; i < lst.length; i++) {
+    omg_gist gist = lst.gist_array[i];
+    int column = 1;
+    sqlite3_bind_text(stmt, column++, gist.id, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, column++, gist.created_at, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, column++, gist.description, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, column++, gist._file_as_json, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, column++, gist.public);
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+      fprintf(stderr, "insert gist(%s) failed. code:%d, msg:%s\n", gist.id, rc,
+              sqlite3_errmsg(ctx->db));
+    }
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+  }
+  return NO_ERROR;
+}
+
+static omg_error omg_save_gists(omg_context ctx, bool is_star,
+                                omg_gist_list lst) {
+  omg_error err = omg_save_gists_common(ctx, lst);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  auto_sqlite3_stmt stmt = NULL;
+  const char *sql =
+      "insert or ignore into omg_created_gist(gist_id) values(?1)";
+  if (is_star) {
+    sql = "insert or ignore into omg_starred_gist(gist_id) values(?1)";
+  }
+  int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
+  if (rc) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+
+  for (int i = 0; i < lst.length; i++) {
+    sqlite3_bind_text(stmt, 1, lst.gist_array[i].id, -1, SQLITE_STATIC);
+    rc = sqlite3_step(stmt);
+    if (rc != SQLITE_DONE) {
+      fprintf(stderr, "insert created/starred(%s) failed. code:%d, msg:%s\n",
+              lst.gist_array[i].id, rc, sqlite3_errmsg(ctx->db));
+    }
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+  }
+  return NO_ERROR;
+}
+
+static omg_error omg_sync_gists_common(omg_context ctx, bool is_star) {
+  size_t page_num = 1;
+  while (true) {
+    {
+#ifdef OMG_TEST
+      if (page_num > 2) {
+        break;
+      }
+#endif
+      omg_auto_gist_list gist_lst = {};
+      omg_error err = fetch_gists_by_page(ctx, page_num++, is_star, &gist_lst);
+      if (!is_ok(err)) {
+        return err;
+      }
+      err = omg_save_gists(ctx, is_star, gist_lst);
+      if (!is_ok(err)) {
+        return err;
+      }
+
+      if (gist_lst.length < PER_PAGE) {
+        break;
+      }
+    }
+  }
+
+  return NO_ERROR;
+}
+
+omg_error omg_sync_created_gists(omg_context ctx) {
+  return omg_sync_gists_common(ctx, false);
+}
+
+omg_error omg_sync_starred_gists(omg_context ctx) {
+  return omg_sync_gists_common(ctx, true);
 }

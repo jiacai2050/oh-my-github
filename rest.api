@@ -56,6 +56,9 @@ GET :root/users/jiacai2050
 #
 GET :root/gists
 :headers
+#
+GET :root/gists/starred
+:headers
 
 #
 GET :root/gists/cf30db07bb2e95ffb7d5114bc95c0cfc
