@@ -23,21 +23,32 @@ EMACS_OBJECTS = $(CORE_DIR)/omg.o $(EMACS_DIR)/emacs.o
 EMACS_HEADERS = $(COMMON_HEADERS)
 
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix)
+ifeq ($(OMG_TEST), 1)
+	CFLAGS += -D OMG_TEST
+endif
+ifeq ($(OMG_VERBOSE), 1)
+	CFLAGS += -D VERBOSE
+endif
+
 LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
+ifeq ($(OMG_TEST), 1)
+	LDFLAGS += -O1 -v
+else
+	LDFLAGS += -O3
+endif
+
 # ASAN cannot be used with valgrind together
 ifeq ($(ENABLE_ASAN), 1)
+	CFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 endif
+
 CC = gcc
 
 .DEFAULT_GOAL := $(CLI)
 
 %.o: %.c
-ifeq ($(OMG_TEST), 1)
-	$(CC) -D VERBOSE -D OMG_TEST $(CFLAGS) -c $< -o $@
-else
 	$(CC) $(CFLAGS) -c $< -o $@
-endif
 
 $(CORE_DIR)/create_table.h: $(CORE_DIR)/create_table.sql
 	xxd -i $< | tac | sed '3s/$$/, 0x00/' | tac > $@
@@ -46,17 +57,13 @@ $(CLI_DIR)/help.h: $(CLI_DIR)/help.txt
 	xxd -i $< > $@
 
 $(CLI): $(CLI_OBJECTS) $(CLI_HEADERS)
-ifeq ($(OMG_TEST), 1)
-	$(CC) -O1  $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI)
-else
-	$(CC) -O3 $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI)
-endif
+	$(CC) $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI)
 
 memcheck:
 	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(CLI) -f /tmp/test.db
 
 $(SO_FILE): $(EMACS_HEADERS) $(EMACS_OBJECTS)
-	$(CC) -O3 -dynamiclib $(EMACS_OBJECTS) $(LDFLAGS) -o $(SO_FILE)
+	$(CC) -dynamiclib $(EMACS_OBJECTS) $(LDFLAGS) -o $(SO_FILE)
 
 emacs-dyn: $(SO_FILE)
 	@echo "Emacs dynamic module saved to $(SO_FILE)"

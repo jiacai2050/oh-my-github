@@ -12,35 +12,54 @@ omg_error cli_print_help() {
   exit(1);
 }
 
+void delete_gist(omg_context ctx, char *gist_id) {
+  omg_error err = omg_delete_gist(ctx, gist_id);
+  if (!is_ok(err)) {
+    fprintf(stderr, "delete gist failed");
+    print_error(err);
+  }
+}
+
 omg_error cli_sync(const char *token, const char *db_path) {
   omg_auto_context ctx = NULL;
   omg_error err = omg_setup_context(db_path, token, &ctx);
   if (!is_ok(err)) {
     return err;
   }
-  err = omg_sync_stars(ctx);
+
+  err = omg_sync_starred_repos(ctx);
   if (!is_ok(err)) {
     return err;
   }
 
-  return omg_sync_repos(ctx);
+  err = omg_sync_created_repos(ctx);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  err = omg_sync_created_gists(ctx);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  return omg_sync_starred_gists(ctx);
 }
 
 omg_error cli_trendings(const char *token, const char *db_path,
                         // params not used now
-                        const char *params) {
+                        const char *_params) {
   omg_auto_context ctx = NULL;
   omg_error err = omg_setup_context(db_path, token, &ctx);
   if (!is_ok(err)) {
     return err;
   }
-  omg_auto_repo_list lst = omg_new_repo_list();
+  omg_auto_repo_list lst = {};
   err = omg_query_trending(ctx, NULL, NULL, "daily", &lst);
   if (!is_ok(err)) {
     return err;
   }
   printf("%-12s|%-30s|%-100s\n", "Recent stars", "Repository", "Description");
-  for (int i = 0; i < lst.length; i++) {
+  for (size_t i = 0; i < lst.length; i++) {
     char recent_stars[10];
     sprintf(recent_stars, "%d", lst.repo_array[i].stargazers_count);
     printf("%-12.*s|%-30.*s|%-100.*s\n",      // format
@@ -123,7 +142,7 @@ int main(int argc, char **argv) {
     cli_print_help();
   }
 
-  /* omg_auto_repo_list lst; */
+  /* omg_auto_created_repo_list lst; */
   /* err = omg_query_repos(ctx, "vagrant", NULL, &lst); */
   /* err = omg_query_repos(ctx, NULL, "Rust", &lst); */
   /* if (!is_ok(err)) { */
