@@ -277,18 +277,33 @@ static omg_error omg_request(omg_context ctx, const char *method,
 
   long response_code;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-  static int no_content = 204;
-  static int not_modified = 304;
-  if (response_code == no_content || response_code == not_modified) {
+  static const long no_content = 204;
+  static const long not_modified = 304;
+  static const long not_found = 404;
+  switch (response_code) {
+  case no_content:
+  case not_modified:
     return NO_ERROR;
+  case not_found:
+    return (omg_error){.code = OMG_CODE_CURL,
+                       .message =
+                           "404. Resource Not Found or Not owned by you"};
+  default:
+    if (response_code >= 400) {
+      fprintf(stderr, "visit %s failed with %zu\n", url, response_code);
+      return (omg_error){.code = OMG_CODE_CURL,
+                         .message = "Bad request, check stderr for details."};
+    }
   }
 
-  json_error_t error;
-  json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
-  if (!resp) {
-    return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
+  if (*out) {
+    json_error_t error;
+    json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
+    if (!resp) {
+      return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
+    }
+    *out = resp;
   }
-  *out = resp;
 
   return NO_ERROR;
 }
@@ -1366,6 +1381,22 @@ omg_error omg_query_created_gists(omg_context ctx, omg_gist_list *out) {
 
 omg_error omg_query_starred_gists(omg_context ctx, omg_gist_list *out) {
   return omg_query_gists_common(ctx, true, out);
+}
+
+omg_error omg_delete_gist(omg_context ctx, char *gist_id) {
+  const char *sql = "delete from omg_created_gist where gist_id = ?";
+  auto_sqlite3_stmt stmt = NULL;
+  if (sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL)) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+  sqlite3_bind_text(stmt, 1, gist_id, -1, SQLITE_STATIC);
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+
+  char url[128];
+  sprintf(url, "%s/gists/%s", API_ROOT, gist_id);
+  return omg_request(ctx, DELETE_METHOD, url, NULL, NULL);
 }
 
 omg_error omg_unstar_gist(omg_context ctx, char *gist_id) {

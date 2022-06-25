@@ -370,23 +370,20 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (tabulated-list-get-id))
 
 (defun oh-my-github--get-gist-url ()
-  (if-let ((id (oh-my-github--get-gist-id)))
-      (format "https://gist.github.com/%s" id)
-    (error "No gist found")))
+  (when-let ((id (oh-my-github--get-gist-id)))
+    (format "https://gist.github.com/%s" id)))
 
 (defun oh-my-github--get-gist-file-url ()
-  (if-let ((entry (tabulated-list-get-entry))
-           (file-btn (seq-elt entry 1))
-           (raw-url (plist-get (cdr file-btn) 'raw-url)))
-      raw-url
-    (error "No gist found")))
+  (when-let ((entry (tabulated-list-get-entry))
+             (file-btn (seq-elt entry 1))
+             (raw-url (plist-get (cdr file-btn) 'raw-url)))
+    raw-url))
 
 (defun oh-my-github--get-gist-file-name ()
-  (if-let ((entry (tabulated-list-get-entry))
-           (file-btn (seq-elt entry 1))
-           (filename (car file-btn)))
-      filename
-    (error "No gist found")))
+  (when-let ((entry (tabulated-list-get-entry))
+             (file-btn (seq-elt entry 1))
+             (filename (car file-btn)))
+    filename))
 
 (defun oh-my-github-browse-gist ()
   (interactive)
@@ -410,10 +407,20 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
              (filename (oh-my-github--get-gist-file-name)))
     (oh-my-github--download-file filename raw-url)))
 
+(defun oh-my-github-delete-gist ()
+  (interactive)
+  (when-let ((gist-id (oh-my-github--get-gist-id))
+             (filename (oh-my-github--get-gist-file-name)))
+    (when (yes-or-no-p (format "Are you really want to delete %s?" filename)))
+    (omg-dyn-delete-gist gist-id)
+    (tabulated-list-delete-entry)
+    (message "Deleted. %s %s" filename gist-id)))
+
 (defvar oh-my-github-gists-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map tabulated-list-mode-map)
     (define-key map (kbd "b") 'oh-my-github-browse-gist)
+    (define-key map (kbd "x") 'oh-my-github-delete-gist)
     (define-key map (kbd "d") 'oh-my-github-download-gist-file)
     (define-key map (kbd "w") 'oh-my-github-copy-gist-file-url)
     (define-key map (kbd "RET") 'oh-my-github-browse-gist-file)
@@ -434,10 +441,12 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
 (defun oh-my-github-unstar-gist ()
   (interactive)
-  (when-let ((gist-id (oh-my-github--get-gist-id)))
+  (when-let ((gist-id (oh-my-github--get-gist-id))
+             (filename (oh-my-github--get-gist-file-name)))
+    (when (yes-or-no-p (format "Are you really want to unstar %s?" filename)))
     (omg-dyn-unstar-gist gist-id)
     (tabulated-list-delete-entry)
-    (message "Unstarred %s" gist-id)))
+    (message "Unstarred. %s %s" filename gist-id)))
 
 (defvar oh-my-github-starred-gists-mode-map
   (let ((map (make-sparse-keymap)))
