@@ -22,7 +22,8 @@ CLI_HEADERS = $(COMMON_HEADERS) $(CLI_DIR)/help.h
 EMACS_OBJECTS = $(CORE_DIR)/omg.o $(EMACS_DIR)/emacs.o
 EMACS_HEADERS = $(COMMON_HEADERS)
 
-CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix)
+# Why -fPIC https://stackoverflow.com/a/5311665/2163429
+CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix) -fPIC
 ifeq ($(OMG_TEST), 1)
 	CFLAGS += -D OMG_TEST
 endif
@@ -63,17 +64,17 @@ memcheck:
 	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(CLI) -f /tmp/test.db
 
 $(SO_FILE): $(EMACS_HEADERS) $(EMACS_OBJECTS)
-	$(CC) -dynamiclib $(EMACS_OBJECTS) $(LDFLAGS) -o $(SO_FILE)
+	$(CC) -shared $(EMACS_OBJECTS) $(LDFLAGS) -o $(SO_FILE)
 
 emacs-dyn: $(SO_FILE)
 	@echo "Emacs dynamic module saved to $(SO_FILE)"
 
 install-deps:
 ifeq ($(uname_S), Darwin)
-	brew install jansson pkg-config pcre2
+	brew install jansson pkg-config pcre2 sqlite
 endif
 ifeq ($(uname_S), Linux)
-	sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev
+	sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev xxd
 endif
 
 clean:

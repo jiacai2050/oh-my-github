@@ -277,14 +277,11 @@ static omg_error omg_request(omg_context ctx, const char *method,
 
   long response_code;
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-  static const long no_content = 204;
-  static const long not_modified = 304;
-  static const long not_found = 404;
   switch (response_code) {
-  case no_content:
-  case not_modified:
+  case 204: // no_content
+  case 304: // not_modified
     return NO_ERROR;
-  case not_found:
+  case 404: // not_found
     return (omg_error){.code = OMG_CODE_CURL,
                        .message =
                            "404. Resource Not Found or Not owned by you"};

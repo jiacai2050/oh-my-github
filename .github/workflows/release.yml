@@ -33,7 +33,9 @@ jobs:
     - name: Install dependencies
       run: make install-deps
     - name: Build Emacs dynamic module
-      run: make emacs-dyn
+      run: |
+        which brew && export PKG_CONFIG_PATH="$(brew --prefix)/opt/sqlite/lib/pkgconfig"
+        make emacs-dyn
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
       with:

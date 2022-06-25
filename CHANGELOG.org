@@ -7,6 +7,8 @@
 #+STARTUP: content
 
 * master(unrelease)
+
+* v0.6.0 (2022-06-25)
 ** New Features
 - Query trending support spoken languages filter
 - CLI support args parse, both sync and trendings are supported now
@@ -15,7 +17,6 @@
   - Delete/Unstar
 ** Internal Improvements
 - Trending API reuse =curl= instance
-
 * v0.5.0 (2022-04-28)
 ** New Features
 - Add oh-my-github-trending-repos-mode, browse https://github.com/trending in Emacs
