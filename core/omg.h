@@ -195,7 +195,6 @@ omg_error omg_query_trending(omg_context, const char *spoken_lang,
 
 typedef struct {
   char *filename;
-  char *type;
   char *language;
   char *raw_url;
   size_t size;
@@ -206,9 +205,8 @@ typedef struct {
   char *created_at;
   char *description;
   bool public;
-  char *_file_as_json; // private, use file_array instead
-  omg_gist_file *file_array;
-  size_t file_length;
+  char *_files_as_json; // private, use file instead
+  omg_gist_file file;
 } omg_gist;
 
 void omg_free_gist(omg_gist *);

@@ -18,20 +18,21 @@ omg_error cli_sync(const char *token, const char *db_path) {
   if (!is_ok(err)) {
     return err;
   }
-  /* err = omg_sync_starred_repos(ctx); */
-  /* if (!is_ok(err)) { */
-  /*   return err; */
-  /* } */
+  err = omg_sync_starred_repos(ctx);
+  if (!is_ok(err)) {
+    return err;
+  }
 
-  /* err = omg_sync_created_repos(ctx); */
-  /* if (!is_ok(err)) { */
-  /*   return err; */
-  /* } */
+  err = omg_sync_created_repos(ctx);
+  if (!is_ok(err)) {
+    return err;
+  }
 
   err = omg_sync_created_gists(ctx);
   if (!is_ok(err)) {
     return err;
   }
+
   return omg_sync_starred_gists(ctx);
 }
 

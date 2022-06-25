@@ -1,4 +1,4 @@
-;;; oh-my-github.el --- Oh My GitHub is a delightful, open source tool for managing your GitHub repositories. -*- lexical-binding: t -*-
+;;; oh-my-github.el --- Oh My GitHub is a delightful, open source tool for managing your GitHub repositories/gists. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2022 Jiacai Liu
 
@@ -198,6 +198,14 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (seq-into (omg-dyn-query-created-repos oh-my-github-query-keyword oh-my-github-query-language)
             'list))
 
+(defun oh-my-github--query-starred-gists ()
+  (seq-into (omg-dyn-query-starred-gists)
+            'list))
+
+(defun oh-my-github--query-created-gists ()
+  (seq-into (omg-dyn-query-created-gists)
+            'list))
+
 (defun oh-my-github--query-commits ()
   (seq-into (omg-dyn-query-commits oh-my-github-query-repo-full-name
                                    oh-my-github-commit-query-limit)
@@ -213,6 +221,23 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                      oh-my-github-trendings-query-language
                                      oh-my-github-trendings-query-range)
             'list))
+
+(defun oh-my-github--download-file (filename raw-url)
+  (let* ((dir (if (stringp oh-my-github-download-directory)
+                  oh-my-github-download-directory
+                (funcall oh-my-github-download-directory)))
+         (dest (expand-file-name filename dir)))
+    (when (or (not (file-exists-p dest))
+              (yes-or-no-p (format "%s exists, overwrite? " dest)))
+      (let* ((proc (make-pipe-process :name (format "*oh-my-github-download %s*" raw-url)
+                                      :coding 'utf-8-emacs-unix
+                                      :filter (lambda (proc output)
+                                                (oh-my-github--log "oh-my-github-download: %s\n" output)
+                                                (when (string-match-p oh-my-github-pipe-eof output)
+                                                  (delete-process proc))))))
+        (when (omg-dyn-download proc raw-url dest)
+          (message (format "Start downloading %s in background.\nCheck %s buffer for progress." raw-url
+                           oh-my-github--log-buf-name)))))))
 
 (defun oh-my-github--get-full-name()
   (when-let ((entry (tabulated-list-get-entry)))
@@ -339,6 +364,84 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (oh-my-github--init-repos-tabulated-list '("StarredAt" 20 t)
                                            (cons "StarredAt" t)
                                            'oh-my-github--query-starred-repos))
+
+;; Gist modes
+(defun oh-my-github--get-gist-id ()
+  (tabulated-list-get-id))
+
+(defun oh-my-github--get-gist-url ()
+  (if-let ((id (oh-my-github--get-gist-id)))
+      (format "https://gist.github.com/%s" id)
+    (error "No gist found")))
+
+(defun oh-my-github--get-gist-file-url ()
+  (if-let ((entry (tabulated-list-get-entry))
+           (file-btn (seq-elt entry 1))
+           (raw-url (plist-get (cdr file-btn) 'raw-url)))
+      raw-url
+    (error "No gist found")))
+
+(defun oh-my-github--get-gist-file-name ()
+  (if-let ((entry (tabulated-list-get-entry))
+           (file-btn (seq-elt entry 1))
+           (filename (car file-btn)))
+      filename
+    (error "No gist found")))
+
+(defun oh-my-github-browse-gist ()
+  (interactive)
+  (when-let ((url (oh-my-github--get-gist-url)))
+    (browse-url url)))
+
+(defun oh-my-github-copy-gist-file-url ()
+  (interactive)
+  (when-let ((url (oh-my-github--get-gist-file-url)))
+    (kill-new url)
+    (message "Copied %s" url)))
+
+(defun oh-my-github-browse-gist-file ()
+  (interactive)
+  (when-let ((raw-url (oh-my-github--get-gist-file-url)))
+    (browse-url raw-url)))
+
+(defun oh-my-github-download-gist-file ()
+  (interactive)
+  (when-let ((raw-url (oh-my-github--get-gist-file-url))
+             (filename (oh-my-github--get-gist-file-name)))
+    (oh-my-github--download-file filename raw-url)))
+
+(defvar oh-my-github-gists-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map tabulated-list-mode-map)
+    (define-key map (kbd "b") 'oh-my-github-browse-gist)
+    (define-key map (kbd "d") 'oh-my-github-download-gist-file)
+    (define-key map (kbd "w") 'oh-my-github-copy-gist-file-url)
+    (define-key map (kbd "RET") 'oh-my-github-browse-gist-file)
+    (define-key map (kbd "s-u") 'tabulated-list-revert)
+    map)
+  "Local keymap for oh-my-github-gists mode buffers.")
+
+(define-derived-mode oh-my-github-gists-mode tabulated-list-mode "oh-my-github created repos" "Manage created gists"
+  (setq tabulated-list-format [("CreatedAt" 20 t)
+                               ("File" 30 t)
+                               ("Description" 50)]
+        tabulated-list-padding 2
+        tabulated-list-sort-key  (cons "CreatedAt" t)
+        tabulated-list-entries 'oh-my-github--query-created-gists)
+
+  (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
+  (tabulated-list-init-header))
+
+(define-derived-mode oh-my-github-starred-gists-mode oh-my-github-gists-mode "oh-my-github starred gists" "Manage starred gists"
+  (setq tabulated-list-format [("CreatedAt" 20)
+                               ("File" 30)
+                               ("Description" 50)]
+        tabulated-list-padding 2
+        tabulated-list-sort-key nil
+        tabulated-list-entries 'oh-my-github--query-starred-gists)
+
+  (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
+  (tabulated-list-init-header))
 
 (defun oh-my-github--get-commit-sha ()
   (when-let ((entry (tabulated-list-get-entry)))
@@ -490,22 +593,8 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (interactive)
   (if-let* ((name (oh-my-github--get-asset-name))
             (label (car name))
-            (raw-url (plist-get (cdr name) 'raw-url))
-            (dir (if (stringp oh-my-github-download-directory)
-                     oh-my-github-download-directory
-                   (funcall eww-download-directory)))
-            (dest (expand-file-name label dir)))
-      (when (or (not (file-exists-p dest))
-                (yes-or-no-p (format "%s exists, overwrite? " dest)))
-        (let* ((proc (make-pipe-process :name (format "*oh-my-github-download %s*" raw-url)
-                                        :coding 'utf-8-emacs-unix
-                                        :filter (lambda (proc output)
-                                                  (oh-my-github--log "oh-my-github-download: %s\n" output)
-                                                  (when (string-match-p oh-my-github-pipe-eof output)
-                                                    (delete-process proc))))))
-          (when (omg-dyn-download proc raw-url dest)
-            (message (format "Start downloading %s in background.\nCheck %s buffer for progress." raw-url
-                             oh-my-github--log-buf-name)))))
+            (raw-url (plist-get (cdr name) 'raw-url)))
+      (oh-my-github--download-file label raw-url)
     (user-error "There is no asset at point")))
 
 (defvar oh-my-github-assets-mode-map
@@ -646,6 +735,24 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (interactive)
   (with-current-buffer (get-buffer-create "*oh-my-github starred repositories*")
     (oh-my-github-starred-repos-mode)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+;;;###autoload
+(defun oh-my-github-list-created-gists ()
+  "Display created gists in table view."
+  (interactive)
+  (with-current-buffer (get-buffer-create "*oh-my-github created gists*")
+    (oh-my-github-gists-mode)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+;;;###autoload
+(defun oh-my-github-list-starred-gists ()
+  "Display starred gists in table view."
+  (interactive)
+  (with-current-buffer (get-buffer-create "*oh-my-github starred gists*")
+    (oh-my-github-starred-gists-mode)
     (tabulated-list-print t)
     (switch-to-buffer (current-buffer))))
 

@@ -132,12 +132,12 @@ omg_dyn_query_common(emacs_env *env, const char *first_column, omg_repo repo) {
   omg_auto_char readable_size = human_size(repo.size);
   emacs_value size_button =
       lisp_funcall(env, "cons", lisp_string(env, readable_size),
-                   (lisp_funcall(env, "list",
-                                 // display as plain text
-                                 lisp_symbol(env, "face"), Qnil,
-                                 // echo full digits
-                                 lisp_symbol(env, "help-echo"),
-                                 lisp_string(env, size_str), )));
+                   lisp_funcall(env, "list",
+                                // display as plain text
+                                lisp_symbol(env, "face"), Qnil,
+                                // echo full digits
+                                lisp_symbol(env, "help-echo"),
+                                lisp_string(env, size_str), ));
 
   emacs_value row = lisp_funcall(
       env, "list", lisp_string(env, repo_id),
@@ -213,6 +213,56 @@ emacs_value omg_dyn_query_starred_repos(emacs_env *env, ptrdiff_t nargs,
   return star_vector;
 }
 
+static emacs_value omg_dyn_query_gists_common(emacs_env *env, bool is_star) {
+  ENSURE_SETUP(env);
+
+  omg_auto_gist_list star_lst = {};
+  omg_error err = {};
+  if (is_star) {
+    err = omg_query_starred_gists(ctx, &star_lst);
+  } else {
+    err = omg_query_created_gists(ctx, &star_lst);
+  }
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  emacs_value gist_vector = lisp_funcall(
+      env, "make-vector", lisp_integer(env, star_lst.length), Qnil);
+  for (int i = 0; i < star_lst.length; i++) {
+    omg_gist gist = star_lst.gist_array[i];
+    omg_auto_char readable_size = human_size(gist.file.size);
+    emacs_value file_button = lisp_funcall(
+        env, "cons", lisp_string(env, gist.file.filename),
+        lisp_funcall(
+            env, "list", lisp_symbol(env, "face"), Qnil,
+            lisp_symbol(env, "raw-url"), lisp_string(env, gist.file.raw_url),
+            lisp_symbol(env, "language"), lisp_string(env, gist.file.language),
+            lisp_symbol(env, "help-echo"), lisp_string(env, readable_size)));
+
+    emacs_value row = lisp_funcall(
+        env, "list", lisp_string(env, gist.id),
+        lisp_funcall(env, "vector", lisp_string(env, gist.created_at),
+                     file_button,
+                     lisp_string(env, string_or_empty(gist.description)), ));
+    lisp_funcall(env, "aset", gist_vector, lisp_integer(env, i), row);
+  }
+
+  return gist_vector;
+}
+
+emacs_value omg_dyn_query_starred_gists(emacs_env *env, ptrdiff_t nargs,
+                                        emacs_value *args, void *data) {
+  return omg_dyn_query_gists_common(env, true);
+}
+
+emacs_value omg_dyn_query_created_gists(emacs_env *env, ptrdiff_t nargs,
+                                        emacs_value *args, void *data) {
+  return omg_dyn_query_gists_common(env, false);
+}
+
 emacs_value omg_dyn_query_trendings(emacs_env *env, ptrdiff_t nargs,
                                     emacs_value *args, void *data) {
   ENSURE_SETUP(env);
@@ -280,7 +330,23 @@ static void *omg_dyn_sync_background(void *ptr) {
   if (!is_ok(err)) {
     write(pipe, err.message, strlen(err.message));
   } else {
-    msg = "Owned repositories sync finished!";
+    msg = "Created repositories sync finished!";
+    write(pipe, msg, strlen(msg));
+  }
+
+  err = omg_sync_starred_gists(ctx);
+  if (!is_ok(err)) {
+    write(pipe, err.message, strlen(err.message));
+  } else {
+    msg = "Starred gists sync finished!";
+    write(pipe, msg, strlen(msg));
+  }
+
+  err = omg_sync_created_gists(ctx);
+  if (!is_ok(err)) {
+    write(pipe, err.message, strlen(err.message));
+  } else {
+    msg = "Created gists sync finished!";
     write(pipe, msg, strlen(msg));
   }
 
@@ -631,6 +697,14 @@ int emacs_module_init(runtime ert) {
                    env, 0, 2, omg_dyn_query_created_repos,
                    "Query created repositories based on keyword or language",
                    NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-starred-gists"),
+               env->make_function(env, 0, 0, omg_dyn_query_starred_gists,
+                                  "Query starred gists", NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-created-gists"),
+               env->make_function(env, 0, 0, omg_dyn_query_created_gists,
+                                  "Query created gists", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar-repo"),
                env->make_function(env, 1, 1, omg_dyn_unstar_repo,

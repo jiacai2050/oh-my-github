@@ -32,15 +32,17 @@ endif
 
 LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
 ifeq ($(OMG_TEST), 1)
-	LDFLAGS += -O1
+	LDFLAGS += -O1 -v
 else
 	LDFLAGS += -O3
 endif
 
 # ASAN cannot be used with valgrind together
 ifeq ($(ENABLE_ASAN), 1)
+	CFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 endif
+
 CC = gcc
 
 .DEFAULT_GOAL := $(CLI)

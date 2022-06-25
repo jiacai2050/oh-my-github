@@ -1166,14 +1166,10 @@ void omg_free_gist(omg_gist *gist) {
     FREE_OBJ_FIELD(gist, id);
     FREE_OBJ_FIELD(gist, created_at);
     FREE_OBJ_FIELD(gist, description);
-    for (size_t i = 0; i < gist->file_length; i++) {
-      omg_gist_file *file = &gist->file_array[i];
-      FREE_OBJ_FIELD(file, filename);
-      FREE_OBJ_FIELD(file, type);
-      FREE_OBJ_FIELD(file, language);
-      FREE_OBJ_FIELD(file, raw_url);
-    }
-    free(gist->file_array);
+    omg_gist_file *file = &gist->file;
+    FREE_OBJ_FIELD(file, filename);
+    FREE_OBJ_FIELD(file, language);
+    FREE_OBJ_FIELD(file, raw_url);
   }
 }
 
@@ -1205,7 +1201,7 @@ static omg_error fetch_gists_by_page(omg_context ctx, size_t page_num,
         .created_at = dup_json_string(one_gist, "created_at"),
         .description = dup_json_string(one_gist, "description"),
         .public = json_boolean_value(json_object_get(one_gist, "created_at")),
-        ._file_as_json = json_dumps(json_object_get(one_gist, "files"), 0),
+        ._files_as_json = json_dumps(json_object_get(one_gist, "files"), 0),
     };
   }
   *out = (omg_gist_list){.gist_array = gist_array, .length = resp_len};
@@ -1230,7 +1226,7 @@ static omg_error omg_save_gists_common(omg_context ctx, omg_gist_list lst) {
     sqlite3_bind_text(stmt, column++, gist.id, -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, column++, gist.created_at, -1, SQLITE_STATIC);
     sqlite3_bind_text(stmt, column++, gist.description, -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, column++, gist._file_as_json, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, column++, gist._files_as_json, -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, column++, gist.public);
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE) {
@@ -1308,4 +1304,66 @@ omg_error omg_sync_created_gists(omg_context ctx) {
 
 omg_error omg_sync_starred_gists(omg_context ctx) {
   return omg_sync_gists_common(ctx, true);
+}
+
+omg_error omg_query_gists_common(omg_context ctx, bool is_star,
+                                 omg_gist_list *out) {
+  char sql[512];
+  sprintf(sql,
+          "select g.id, datetime(created_at, 'localtime'), g.description, "
+          "value ->> 'filename', "
+          "value ->> 'language', "
+          "value ->> 'raw_url', "
+          "value ->> 'size' "
+          "from %s g, json_each(files) "
+          "order by g.created_at desc",
+          is_star ? "omg_starred_gist_view" : "omg_created_gist_view");
+
+#ifdef OMG_TEST
+  printf("query gists, sql:%s\n", sql);
+#endif
+  auto_sqlite3_stmt stmt = NULL;
+  int rc = sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL);
+  if (rc) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+
+  size_t rows_count = 0;
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    rows_count++;
+  }
+
+  omg_gist *gist_arr = malloc(sizeof(omg_gist) * rows_count);
+  sqlite3_reset(stmt);
+  size_t row = 0;
+  rc = 0;
+  while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
+    omg_gist gist = {
+        .id = strdup_when_not_null(sqlite3_column_text(stmt, 0)),
+        .created_at = strdup_when_not_null(sqlite3_column_text(stmt, 1)),
+        .description = strdup_when_not_null(sqlite3_column_text(stmt, 2)),
+        .file =
+            {
+                .filename = strdup_when_not_null(sqlite3_column_text(stmt, 3)),
+                .language = strdup_when_not_null(sqlite3_column_text(stmt, 4)),
+                .raw_url = strdup_when_not_null(sqlite3_column_text(stmt, 5)),
+                .size = sqlite3_column_int(stmt, 6),
+            },
+    };
+    gist_arr[row++] = gist;
+  }
+  if (rc != SQLITE_DONE) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+
+  *out = (omg_gist_list){.gist_array = gist_arr, .length = rows_count};
+  return NO_ERROR;
+}
+
+omg_error omg_query_created_gists(omg_context ctx, omg_gist_list *out) {
+  return omg_query_gists_common(ctx, false, out);
+}
+
+omg_error omg_query_starred_gists(omg_context ctx, omg_gist_list *out) {
+  return omg_query_gists_common(ctx, true, out);
 }
