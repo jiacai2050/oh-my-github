@@ -1367,3 +1367,19 @@ omg_error omg_query_created_gists(omg_context ctx, omg_gist_list *out) {
 omg_error omg_query_starred_gists(omg_context ctx, omg_gist_list *out) {
   return omg_query_gists_common(ctx, true, out);
 }
+
+omg_error omg_unstar_gist(omg_context ctx, char *gist_id) {
+  const char *sql = "delete from omg_starred_gist where gist_id = ?";
+  auto_sqlite3_stmt stmt = NULL;
+  if (sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL)) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+  sqlite3_bind_text(stmt, 1, gist_id, -1, SQLITE_STATIC);
+  if (sqlite3_step(stmt) != SQLITE_DONE) {
+    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+  }
+
+  char url[128];
+  sprintf(url, "%s/gists/%s/star", API_ROOT, gist_id);
+  return omg_request(ctx, DELETE_METHOD, url, NULL, NULL);
+}

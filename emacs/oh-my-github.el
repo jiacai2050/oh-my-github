@@ -358,7 +358,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
     (set-keymap-parent map oh-my-github-repos-mode-map)
     (define-key map (kbd "u") 'oh-my-github-unstar-repo)
     map)
-  "Local keymap for oh-my-github-stars mode buffers.")
+  "Local keymap for oh-my-github-starred-repos mode buffers.")
 
 (define-derived-mode oh-my-github-starred-repos-mode oh-my-github-repos-mode "oh-my-github starred repos" "Manage starred repositories"
   (oh-my-github--init-repos-tabulated-list '("StarredAt" 20 t)
@@ -431,6 +431,20 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
   (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
   (tabulated-list-init-header))
+
+(defun oh-my-github-unstar-gist ()
+  (interactive)
+  (when-let ((gist-id (oh-my-github--get-gist-id)))
+    (omg-dyn-unstar-gist gist-id)
+    (tabulated-list-delete-entry)
+    (message "Unstarred %s" gist-id)))
+
+(defvar oh-my-github-starred-gists-mode-map
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map oh-my-github-gists-mode-map)
+    (define-key map (kbd "u") 'oh-my-github-unstar-gist)
+    map)
+  "Local keymap for oh-my-github-starred-gists mode buffers.")
 
 (define-derived-mode oh-my-github-starred-gists-mode oh-my-github-gists-mode "oh-my-github starred gists" "Manage starred gists"
   (setq tabulated-list-format [("CreatedAt" 20)

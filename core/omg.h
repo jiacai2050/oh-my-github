@@ -225,6 +225,6 @@ omg_error omg_sync_created_gists(omg_context ctx);
 omg_error omg_sync_starred_gists(omg_context ctx);
 omg_error omg_query_created_gists(omg_context ctx, omg_gist_list *out);
 omg_error omg_query_starred_gists(omg_context ctx, omg_gist_list *out);
-omg_error omg_query_unstar_gist(omg_context ctx, char *gist_id);
+omg_error omg_unstar_gist(omg_context ctx, char *gist_id);
 
 #endif

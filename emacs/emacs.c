@@ -313,6 +313,20 @@ emacs_value omg_dyn_unstar_repo(emacs_env *env, ptrdiff_t nargs,
   return Qt;
 }
 
+emacs_value omg_dyn_unstar_gist(emacs_env *env, ptrdiff_t nargs,
+                                emacs_value *args, void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char gist_id = get_string(env, args[0]);
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_error err = omg_unstar_gist(ctx, gist_id);
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  return Qt;
+}
+
 static void *omg_dyn_sync_background(void *ptr) {
   int pipe = *(int *)ptr;
   char *msg = "Start syncing, wait a few seconds...";
@@ -708,7 +722,11 @@ int emacs_module_init(runtime ert) {
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar-repo"),
                env->make_function(env, 1, 1, omg_dyn_unstar_repo,
-                                  "Delete starred repository", NULL));
+                                  "Unstar repository", NULL));
+
+  lisp_funcall(
+      env, "fset", lisp_symbol(env, "omg-dyn-unstar-gist"),
+      env->make_function(env, 1, 1, omg_dyn_unstar_gist, "Unstar gist", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-commits"),
                env->make_function(env, 2, 2, omg_dyn_query_commits,
