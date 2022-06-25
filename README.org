@@ -10,7 +10,7 @@ Oh My GitHub is a delightful, open source tool for managing your GitHub reposito
 
 There are mainly two user interfaces:
 - Emacs. Full-featured
-  - *Sync* repositories(owned and starred) list into local database
+  - *Sync* repositories(created and starred) list into local database
   - *Query created/starred/trending repositories* by keyword or programming language
     - *Unstar* repository
     - *Query latest commits*
@@ -53,22 +53,26 @@ After setup, you can
   - Local database is =oh-my-github.db= inside your Emacs config directory by default, you can customize it with =oh-my-github-db-file= variable.
 
 ** Usage
-There are six major-modes in Oh My GitHub:
-- =oh-my-github-repos-mode=, used for owned repositories
-- =oh-my-github-stars-mode=, used for starred repositories
+There are three major-modes for repositories:
+- =oh-my-github-repos-mode=, used for created repositories
+- =oh-my-github-starred-repos-mode=, used for starred repositories
 - =oh-my-github-trending-repos-mode=, used for trending repositories
 
-repos/stars-mode are two main mode, there are three derived modes based those two:
+And there are three derived modes for repositories:
 - =oh-my-github-commits-mode=, used for display commits of a repository
 - =oh-my-github-releases-mode=, used for display releases of a repository
 - =oh-my-github-assets-mode=, used for display asset files of a release
+
+There are two major-modes for gists:
+- =oh-my-github-gists-mode=, used for created gists
+- =oh-my-github-starred-gists-mode=, used for starred gists
 
 The figure below shows relations among those mode:
 
 [[file:assets/omg-modes.svg]]
 
 *** Useful commands
-- =M-x oh-my-github-sync= Sync GitHub repositories(owned and starred).
+- =M-x oh-my-github-sync= Sync GitHub repositories(created and starred).
   - +Emacs maybe hang a while depending on how many repositories you have.+
   - Since v0.4.0, synchronization/download happens in background thread, which will not hang Emacs any more. Users can check =*oh-my-github-log*= for progress.
   - Mostly this command only need to be executed once.
