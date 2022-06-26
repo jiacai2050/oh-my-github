@@ -240,8 +240,9 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                            oh-my-github--log-buf-name)))))))
 
 (defun oh-my-github--get-full-name()
-  (when-let ((entry (tabulated-list-get-entry)))
-    (aref entry 1)))
+  (when-let ((entry (tabulated-list-get-entry))
+             (name-btn (aref entry 0)))
+    (car name-btn)))
 
 (defun oh-my-github--get-repo-url ()
   (when-let ((name (oh-my-github--get-full-name)))
@@ -283,8 +284,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 (defun oh-my-github-unstar-repo ()
   "Unstar repository at point."
   (interactive)
-  (if-let ((entry (tabulated-list-get-entry))
-           (full-name (elt entry 1)))
+  (if-let ((full-name (oh-my-github--get-full-name)))
       (when (yes-or-no-p (format "Are you really want to unstar %s?" full-name))
         (omg-dyn-unstar-repo (string-to-number (tabulated-list-get-id)))
         (tabulated-list-delete-entry)
@@ -305,32 +305,13 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
     (setq-local oh-my-github-query-language language)
     (tabulated-list-print t)))
 
-(defun oh-my-github--integer-compare (column)
-  (lambda (x y)
-    (<
-     (string-to-number (aref (cadr x) column))
-     (string-to-number (aref (cadr y) column)))))
-
-(defun oh-my-github--size-compare (column)
-  (lambda (x y)
-    (let ((size-btn-x (aref (cadr x) column))
-          (size-btn-y (aref (cadr y) column)))
-      (<
-       (string-to-number (plist-get (cdr size-btn-x) 'help-echo))
-       (string-to-number (plist-get (cdr size-btn-y) 'help-echo))))))
-
-(defun oh-my-github--init-repos-tabulated-list (first-column sort-key query-entries-fn)
-  (setq tabulated-list-format `[,first-column
-                                ("Repository" 25 t)
-                                ("Language" 8 t)
-                                ("Stars" 6 ,(oh-my-github--integer-compare 3))
-                                ("Forks" 6 ,(oh-my-github--integer-compare 4))
-                                ("License" 7 t)
-                                ("Size" 7 ,(oh-my-github--size-compare 6))
-                                ("Description" 50)]
+(defun oh-my-github--init-repos-tabulated-list (query-entries-fn)
+  (setq tabulated-list-format `[("Repository" 25)
+                                ("Language" 8)
+                                ("Description" 40)]
 
         tabulated-list-padding 2
-        tabulated-list-sort-key sort-key
+        ;; tabulated-list-sort-key sort-key
         tabulated-list-entries query-entries-fn)
 
   (add-hook 'tabulated-list-revert-hook 'oh-my-github-tabulated-list-revert nil t)
@@ -349,9 +330,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   "Local keymap for oh-my-github-repos mode buffers.")
 
 (define-derived-mode oh-my-github-repos-mode tabulated-list-mode "oh-my-github created repos" "Manage created repositories"
-  (oh-my-github--init-repos-tabulated-list '("CreatedAt" 20 t)
-                                           (cons "CreatedAt" t)
-                                           'oh-my-github--query-created-repos))
+  (oh-my-github--init-repos-tabulated-list 'oh-my-github--query-created-repos))
 
 (defvar oh-my-github-starred-repos-mode-map
   (let ((map (make-sparse-keymap)))
@@ -361,9 +340,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   "Local keymap for oh-my-github-starred-repos mode buffers.")
 
 (define-derived-mode oh-my-github-starred-repos-mode oh-my-github-repos-mode "oh-my-github starred repos" "Manage starred repositories"
-  (oh-my-github--init-repos-tabulated-list '("StarredAt" 20 t)
-                                           (cons "StarredAt" t)
-                                           'oh-my-github--query-starred-repos))
+  (oh-my-github--init-repos-tabulated-list 'oh-my-github--query-starred-repos))
 
 ;; Gist modes
 (defun oh-my-github--get-gist-id ()

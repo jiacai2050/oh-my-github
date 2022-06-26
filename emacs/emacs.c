@@ -117,35 +117,33 @@ static char *human_size(int size) {
   return buf;
 }
 
-static emacs_value
-omg_dyn_query_common(emacs_env *env, const char *first_column, omg_repo repo) {
+static emacs_value omg_dyn_emacs_button(emacs_env *env, char *label,
+                                        char *help_echo) {
+  return lisp_funcall(env, "cons", lisp_string(env, label),
+                      lisp_funcall(env, "list",
+                                   // display as plain text
+                                   lisp_symbol(env, "face"), Qnil,
+                                   // echo full digits
+                                   lisp_symbol(env, "help-echo"),
+                                   lisp_string(env, help_echo)));
+}
+
+static emacs_value omg_dyn_query_common(emacs_env *env, const char *repo_time,
+                                        bool is_star, omg_repo repo) {
   char repo_id[64];
   sprintf(repo_id, "%d", repo.id);
-  char watchers_count[8];
-  sprintf(watchers_count, "%d", repo.watchers_count);
-  char stars_count[8];
-  sprintf(stars_count, "%d", repo.stargazers_count);
-  char forks_count[8];
-  sprintf(forks_count, "%d", repo.forks_count);
-  char size_str[8];
-  sprintf(size_str, "%d", repo.size);
-  omg_auto_char readable_size = human_size(repo.size);
-  emacs_value size_button =
-      lisp_funcall(env, "cons", lisp_string(env, readable_size),
-                   lisp_funcall(env, "list",
-                                // display as plain text
-                                lisp_symbol(env, "face"), Qnil,
-                                // echo full digits
-                                lisp_symbol(env, "help-echo"),
-                                lisp_string(env, size_str), ));
 
+  char help_echo[512];
+  omg_auto_char readable_size = human_size(repo.size);
+  sprintf(help_echo, "%s\n\nLanguage:%s\nStars:%d\nForks:%d\nSize:%s\n%s:%s",
+          repo.full_name, repo.lang, repo.stargazers_count, repo.forks_count,
+          readable_size, is_star ? "StarredAt" : "CreatedAt", repo_time);
+  emacs_value name_button =
+      omg_dyn_emacs_button(env, (char *)repo.full_name, help_echo);
   emacs_value row = lisp_funcall(
       env, "list", lisp_string(env, repo_id),
-      lisp_funcall(env, "vector", lisp_string(env, (char *)first_column),
-                   lisp_string(env, string_or_empty(repo.full_name)),
+      lisp_funcall(env, "vector", name_button,
                    lisp_string(env, string_or_empty(repo.lang)),
-                   lisp_string(env, stars_count), lisp_string(env, forks_count),
-                   lisp_string(env, string_or_empty(repo.license)), size_button,
                    lisp_string(env, string_or_empty(repo.description)), ));
   return row;
 }
@@ -172,7 +170,7 @@ emacs_value omg_dyn_query_created_repos(emacs_env *env, ptrdiff_t nargs,
       env, "make-vector", lisp_integer(env, repo_lst.length), Qnil);
   for (int i = 0; i < repo_lst.length; i++) {
     omg_repo repo = repo_lst.repo_array[i];
-    emacs_value row = omg_dyn_query_common(env, repo.created_at, repo);
+    emacs_value row = omg_dyn_query_common(env, repo.created_at, false, repo);
     lisp_funcall(env, "aset", repo_vector, lisp_integer(env, i), row);
   }
 
@@ -205,8 +203,8 @@ emacs_value omg_dyn_query_starred_repos(emacs_env *env, ptrdiff_t nargs,
       env, "make-vector", lisp_integer(env, star_lst.length), Qnil);
   for (int i = 0; i < star_lst.length; i++) {
     omg_repo repo = star_lst.star_array[i].repo;
-    emacs_value row =
-        omg_dyn_query_common(env, star_lst.star_array[i].starred_at, repo);
+    emacs_value row = omg_dyn_query_common(
+        env, star_lst.star_array[i].starred_at, true, repo);
     lisp_funcall(env, "aset", star_vector, lisp_integer(env, i), row);
   }
 
