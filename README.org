@@ -78,7 +78,7 @@ The figure below shows relations among those mode:
   - Mostly this command only need to be executed once.
 - =M-x oh-my-github-list-created-repositories= Display starred repositories in table view.
 - =M-x oh-my-github-list-starred-repositories= Display created repositories in table view.
-- =M-x oh-my-github-trendings-list= Display GitHub trending repositories in table view.
+- =M-x oh-my-github-list-trending-repositories= Display GitHub trending repositories in table view.
 - =M-x oh-my-github-list-created-gists= Display starred gists in table view.
 - =M-x oh-my-github-list-starred-gists= Display created gists in table view.
 - =M-x oh-my-github-whoami= Display GitHub user information.

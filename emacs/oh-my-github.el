@@ -739,6 +739,14 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
     (switch-to-buffer (current-buffer))))
 
 ;;;###autoload
+(defun oh-my-github-list-trending-repositories ()
+  (interactive)
+  (with-current-buffer (get-buffer-create (oh-my-github--trendings-buf-name))
+    (oh-my-github-trendings-mode)
+    (tabulated-list-print t)
+    (switch-to-buffer (current-buffer))))
+
+;;;###autoload
 (defun oh-my-github-list-created-gists ()
   "Display created gists in table view."
   (interactive)
@@ -753,14 +761,6 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (interactive)
   (with-current-buffer (get-buffer-create "*oh-my-github starred gists*")
     (oh-my-github-starred-gists-mode)
-    (tabulated-list-print t)
-    (switch-to-buffer (current-buffer))))
-
-;;;###autoload
-(defun oh-my-github-list-trendings ()
-  (interactive)
-  (with-current-buffer (get-buffer-create (oh-my-github--trendings-buf-name))
-    (oh-my-github-trendings-mode)
     (tabulated-list-print t)
     (switch-to-buffer (current-buffer))))
 
