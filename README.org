@@ -6,6 +6,8 @@
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
 
+[[https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml][https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml/badge.svg]]
+
 Oh My GitHub is a delightful, open source tool for managing your GitHub repositories/gists.
 
 There are mainly two user interfaces:
