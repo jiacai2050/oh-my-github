@@ -6,9 +6,9 @@ const testing = std.testing;
 const os = std.os;
 
 test "omg" {
+    const db_path = os.getenv("DB_PATH").?;
     var ctx = init: {
         const token = os.getenv("GITHUB_TOKEN").?;
-        const db_path = os.getenv("DB_PATH").?;
         var ctx: ?*clib.struct_omg_context = null;
 
         const err = clib.omg_setup_context(@ptrCast([*c]const u8, db_path), @ptrCast([*c]const u8, token), &ctx);
@@ -16,6 +16,7 @@ test "omg" {
         break :init ctx;
     };
     defer clib.omg_free_context(&ctx);
+    defer std.fs.deleteFileAbsolute(db_path) catch {};
 
     // download
     try testing.expect(clib.is_ok(clib.omg_download(ctx, "https://httpbin.org/anything", "/tmp/anything.json")));

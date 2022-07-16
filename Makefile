@@ -82,3 +82,4 @@ test: install-deps
 
 clean:
 	rm -f $(CLI) $(SO_FILE) $(EMACS_OBJECTS) $(CLI_OBJECTS)
+	rm -rf zig-cache

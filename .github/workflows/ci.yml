@@ -15,6 +15,10 @@ on:
       - '**.c'
       - '**.h'
 
+env:
+  GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+  DB_PATH: /tmp/test.db
+
 jobs:
   test:
     timeout-minutes: 10
@@ -25,9 +29,8 @@ jobs:
         with:
           version: 0.9.1
       - shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
-          DB_PATH: /tmp/test.db
         run: |
           make test
-          rm $DB_PATH
+          TEST_BINARY=$(find zig-cache -name test)
+          valgrind --leak-check=full --tool=memcheck \
+          --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY} zig
