@@ -7,3 +7,4 @@ omg-cli
 *.dylib
 /.vagrant
 .DS_Store
+/zig-cache

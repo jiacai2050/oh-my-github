@@ -10,6 +10,9 @@
 
 ** Imrovements
 - Simplify repositories UI
+** Bugfix
+- [core] Sync fetch no data
+- [emacs] pass wrong pipe =fd= to background thread
 * v0.6.0 (2022-06-25)
 ** New Features
 - Query trending support spoken languages filter

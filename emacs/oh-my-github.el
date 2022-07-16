@@ -676,7 +676,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 (defun oh-my-github-sync ()
   "Sync GitHub repositories/gists(both created and starred) into local database."
   (interactive)
-  (let* ((buf (get-buffer-create "*oh-my-github-sync*"))
+  (let* ((buf (get-buffer-create oh-my-github--log-buf-name))
          (sync-proc (make-pipe-process :name "oh-my-github-sync"
                                        :coding 'utf-8-emacs-unix
                                        :filter (lambda (proc output)

@@ -340,6 +340,8 @@ emacs_value omg_dyn_unstar_gist(emacs_env *env, ptrdiff_t nargs,
 
 static void *omg_dyn_sync_background(void *ptr) {
   int pipe = *(int *)ptr;
+  free(ptr);
+
   char *msg = "Start syncing, wait a few seconds...";
   write(pipe, msg, strlen(msg));
 
@@ -395,7 +397,9 @@ emacs_value omg_dyn_sync(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   ENSURE_NONLOCAL_EXIT(env);
 
   pthread_t id;
-  int rc = pthread_create(&id, NULL, omg_dyn_sync_background, &fd);
+  int *fd_ptr = malloc(sizeof(fd));
+  *fd_ptr = fd;
+  int rc = pthread_create(&id, NULL, omg_dyn_sync_background, fd_ptr);
   if (rc) {
     IS_SYNC = 0;
     close(fd);

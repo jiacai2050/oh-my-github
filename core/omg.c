@@ -293,14 +293,12 @@ static omg_error omg_request(omg_context ctx, const char *method,
     }
   }
 
-  if (*out) {
-    json_error_t error;
-    json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
-    if (!resp) {
-      return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
-    }
-    *out = resp;
+  json_error_t error;
+  json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
+  if (!resp) {
+    return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
   }
+  *out = resp;
 
   return NO_ERROR;
 }
