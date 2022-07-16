@@ -103,7 +103,6 @@ The figure below shows relations among those mode:
 - macOS
 
 Dependencies can be found in [[file:Makefile][Makefile]]'s =install-deps= target
-- SQLite version requires at least [[https://sqlite.org/json1.html#jptr][3.38.0(2022-02-22)]], for json operators =->= =->>=
 * LICENSE
 Copyright (c) 2022 Jiacai Liu <jiacai2050+omg@gmail.com>
 

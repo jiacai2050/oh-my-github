@@ -1321,12 +1321,17 @@ omg_error omg_query_gists_common(omg_context ctx, bool is_star,
   char sql[512];
   sprintf(sql,
           "select g.id, datetime(created_at, 'localtime'), g.description, "
-          "value ->> 'filename', "
-          "value ->> 'language', "
-          "value ->> 'raw_url', "
-          "value ->> 'size' "
-          "from %s g, json_each(files) "
-          "order by g.created_at desc",
+          "json_extract(value, '$.filename'),"
+          "json_extract(value, '$.language'),"
+          "json_extract(value, '$.raw_url'),"
+          "json_extract(value, '$.size')"
+          // ->> require sqlite3 3.38.0 (2022-02-22)
+          /* "value ->> 'filename', " */
+          /* "value ->> 'language', " */
+          /* "value ->> 'raw_url', " */
+          /* "value ->> 'size' " */
+          " from %s g, json_each(files) "
+          " order by g.created_at desc",
           is_star ? "omg_starred_gist_view" : "omg_created_gist_view");
 
 #ifdef OMG_TEST
