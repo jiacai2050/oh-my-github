@@ -24,6 +24,10 @@ jobs:
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: 0.9.1
-      - run: |
-          DB_PATH=/tmp/test.db make test
-          rm /tmp/test.db
+      - shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          DB_PATH: /tmp/test.db
+        run: |
+          make test
+          rm $DB_PATH
