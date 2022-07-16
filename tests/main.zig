@@ -27,6 +27,7 @@ test "omg" {
         .length = 0,
         .repo_array = null,
     };
+    defer clib.omg_free_repo_list(&repo_list);
     try testing.expect(clib.is_ok(clib.omg_query_created_repos(ctx, "", "", &repo_list)));
     try testing.expect(repo_list.length > 0);
     try testing.expect(repo_list.repo_array != null);
@@ -37,6 +38,7 @@ test "omg" {
         .length = 0,
         .gist_array = null,
     };
+    defer clib.omg_free_gist_list(&gist_list);
     try testing.expect(clib.is_ok(clib.omg_query_created_gists(ctx, &gist_list)));
     try testing.expect(gist_list.length > 0);
     try testing.expect(gist_list.gist_array != null);

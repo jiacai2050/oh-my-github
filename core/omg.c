@@ -1176,6 +1176,7 @@ void omg_free_gist(omg_gist *gist) {
     FREE_OBJ_FIELD(gist, id);
     FREE_OBJ_FIELD(gist, created_at);
     FREE_OBJ_FIELD(gist, description);
+    FREE_OBJ_FIELD(gist, _files_as_json);
     omg_gist_file *file = &gist->file;
     FREE_OBJ_FIELD(file, filename);
     FREE_OBJ_FIELD(file, language);
