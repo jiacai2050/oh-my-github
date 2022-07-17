@@ -30,7 +30,8 @@ jobs:
           version: 0.9.1
       - shell: bash
         run: |
-          make test
-          TEST_BINARY=$(find zig-cache -name test)
+          make install-deps
+          cd tests && zig build --verbose
+          TEST_BINARY=./zig-out/bin/omg-test
           valgrind --leak-check=full --tool=memcheck \
-          --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY} zig
+          --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY}

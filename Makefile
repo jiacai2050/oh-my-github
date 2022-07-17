@@ -77,8 +77,8 @@ ifeq ($(uname_S), Linux)
 	sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev xxd
 endif
 
-test: install-deps
-	zig build test --verbose
+test:
+	cd tests && zig build run
 
 clean:
 	rm -f $(CLI) $(SO_FILE) $(EMACS_OBJECTS) $(CLI_OBJECTS)
