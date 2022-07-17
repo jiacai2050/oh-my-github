@@ -10,11 +10,17 @@
 
 Oh My GitHub is a delightful, open source tool for managing your GitHub repositories/gists.
 
+* Features
+- Support local storage(SQLite)
+  - GitHub synchronization is only required on first use
+- Rich search syntax
+- Fast. Oh My GitHub's core is built in GNU99 C (tested with [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]])
+
 There are mainly two user interfaces:
 - Emacs. Full-featured
-  - *Sync* repositories(created and starred) list into local database
-  - *Query created/starred/trending repositories* by keyword or programming language
-    - *Unstar* repository
+  - *Sync* repositories(created and starred)
+  - *Query repositories*
+    - *Unstar*
     - *Query latest commits*
     - *Query latest releases*
     - *Download release asset files*
@@ -22,14 +28,7 @@ There are mainly two user interfaces:
 
 - CLI, TBD
   - *Sync*
-  - *Query trending repositories*
-
-* Features
-- Support local storage
-  - GitHub synchronization is only required on first use
-- Support search by keyword or programming language
-- Fast. Oh My GitHub's core is built in GNU99 C (tested with [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]])
-
+  - *Query repositories*
 * Emacs Interface
 ** Install
 1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][oh-my-github.el]]
@@ -38,7 +37,7 @@ There are mainly two user interfaces:
    - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencies]]
 3. Put =el= and =so= files under =load-path=
 4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =oh-my-github-pat=
-5. Setup oh-my-github with =oh-my-github-setup=
+5. Initialize with =oh-my-github-setup=
 
 Here is a =use-package= config demo:
 #+BEGIN_SRC emacs-lisp
@@ -50,40 +49,39 @@ Here is a =use-package= config demo:
 #+END_SRC
 
 After setup, you can
-- Check authentication with =M-x oh-my-github-whoami=
-- Sync GitHub repositories into local database with =M-x oh-my-github-sync=
-  - Local database is =oh-my-github.db= inside your Emacs config directory by default, you can customize it with =oh-my-github-db-file= variable.
+- Check authentication with =oh-my-github-whoami=
+- Sync repositories/gists with =oh-my-github-sync=
+  - =~/.emacs.d/oh-my-github.db= is the default database file, users can customize it with =oh-my-github-db-file= variable.
 
 ** Usage
 There are three major-modes for repositories:
-- =oh-my-github-repos-mode=, used for created repositories
-- =oh-my-github-starred-repos-mode=, used for starred repositories
-- =oh-my-github-trending-repos-mode=, used for trending repositories
+- =oh-my-github-repos-mode=
+- =oh-my-github-starred-repos-mode=
+- =oh-my-github-trending-repos-mode=
 
 And there are three derived modes for repositories:
-- =oh-my-github-commits-mode=, used for display commits of a repository
-- =oh-my-github-releases-mode=, used for display releases of a repository
-- =oh-my-github-assets-mode=, used for display asset files of a release
+- =oh-my-github-commits-mode=, commits of a repository
+- =oh-my-github-releases-mode=, releases of a repository
+- =oh-my-github-assets-mode=, asset files of a release
 
 There are two major-modes for gists:
-- =oh-my-github-gists-mode=, used for created gists
-- =oh-my-github-starred-gists-mode=, used for starred gists
+- =oh-my-github-gists-mode=
+- =oh-my-github-starred-gists-mode=
 
 The figure below shows relations among those mode:
 
 [[file:assets/omg-modes.svg]]
 
 *** Useful commands
-- =M-x oh-my-github-sync= Sync GitHub repositories(created and starred).
+- =oh-my-github-sync= Sync repositories/gists
   - +Emacs maybe hang a while depending on how many repositories you have.+
-  - Since v0.4.0, synchronization/download happens in background thread, which will not hang Emacs any more. Users can check =*oh-my-github-log*= for progress.
-  - Mostly this command only need to be executed once.
-- =M-x oh-my-github-list-created-repositories= Display starred repositories in table view.
-- =M-x oh-my-github-list-starred-repositories= Display created repositories in table view.
-- =M-x oh-my-github-list-trending-repositories= Display GitHub trending repositories in table view.
-- =M-x oh-my-github-list-created-gists= Display starred gists in table view.
-- =M-x oh-my-github-list-starred-gists= Display created gists in table view.
-- =M-x oh-my-github-whoami= Display GitHub user information.
+  - Since v0.4.0, synchronization happens in background thread, which will not hang Emacs any more. Users can check =*oh-my-github-log*= buffer for progress.
+- =oh-my-github-list-created-repositories=
+- =oh-my-github-list-starred-repositories=
+- =oh-my-github-list-trending-repositories=
+- =oh-my-github-list-created-gists=
+- =oh-my-github-list-starred-gists=
+- =oh-my-github-whoami=
 ** Screenshots
 *** Starred repositories mode
 [[file:assets/omg-stars.png]]
