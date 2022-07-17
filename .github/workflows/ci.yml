@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '**.zig'
+      - '**.c'
+      - '**.h'
+  push:
+    branches:
+      - master
+    paths:
+      - '**.zig'
+      - '**.c'
+      - '**.h'
+
+env:
+  GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+  DB_PATH: /tmp/test.db
+
+jobs:
+  test:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: goto-bus-stop/setup-zig@v1
+        with:
+          version: 0.9.1
+      - shell: bash
+        run: |
+          make install-deps
+          cd tests && zig build --verbose
+          TEST_BINARY=./zig-out/bin/omg-test
+          valgrind --leak-check=full --tool=memcheck \
+          --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY}

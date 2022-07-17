@@ -31,7 +31,7 @@ ifeq ($(OMG_VERBOSE), 1)
 	CFLAGS += -D VERBOSE
 endif
 
-LDFLAGS += -lcurl $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
+LDFLAGS += $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
 ifeq ($(OMG_TEST), 1)
 	LDFLAGS += -O1 -v
 else
@@ -77,5 +77,9 @@ ifeq ($(uname_S), Linux)
 	sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev xxd
 endif
 
+test:
+	cd tests && zig build run
+
 clean:
 	rm -f $(CLI) $(SO_FILE) $(EMACS_OBJECTS) $(CLI_OBJECTS)
+	rm -rf zig-cache

@@ -561,36 +561,29 @@ static omg_error prepare_query_repos_sql(omg_context ctx, bool is_star,
           first_column, table_name);
 
   if (!empty_string(keyword)) {
-    int current_len = sprintf(sql,
-                              "%s and (full_name like '%%%s%%' COLLATE NOCASE "
-                              "or description like '%%%s%%' COLLATE NOCASE)",
-                              sql, keyword, keyword);
-    if (current_len > SQL_DEFAULT_LEN) {
-      fprintf(stderr, "sql:%s, keyword:%s\n", sql, keyword);
-      return (omg_error){.code = OMG_CODE_INTERNAL,
-                         .message = "buffer not enough when append keyword"};
-    }
+    strcat(sql, " and (full_name like '%");
+    strcat(sql, keyword);
+    strcat(sql, "%' COLLATE NOCASE or description like '%");
+    strcat(sql, keyword);
+    strcat(sql, "%' COLLATE NOCASE) ");
   }
 
   if (!empty_string(language)) {
-    int current_len =
-        sprintf(sql, "%s and lang='%s' COLLATE NOCASE", sql, language);
-    if (current_len > SQL_DEFAULT_LEN) {
-      fprintf(stderr, "sql:%s, lang:%s\n", sql, language);
-      return (omg_error){.code = OMG_CODE_INTERNAL,
-                         .message = "buffer not enough when append language"};
-    }
+    strcat(sql, " and lang='");
+    strcat(sql, language);
+    strcat(sql, "' COLLATE NOCASE ");
   }
 
-  const char *sort_column = is_star ? "starred_at" : "created_at";
-  int current_len = sprintf(sql, "%s order by %s desc", sql, sort_column);
-  if (current_len > SQL_DEFAULT_LEN) {
-    fprintf(stderr, "sql:%s, current:%d, len:%zu\n", sql, current_len,
-            strlen(sql));
+  strcat(sql, " order by ");
+  strcat(sql, is_star ? "starred_at" : "created_at");
+  strcat(sql, " desc");
+  int current_len = strlen(sql);
+  if (current_len >= SQL_DEFAULT_LEN) {
+    fprintf(stderr, "SQL too long. max:%d, sql:%s\n", current_len, sql);
     return (omg_error){.code = OMG_CODE_INTERNAL,
                        .message = "buffer not enough when append order_by"};
   }
-#ifdef VERBOSE
+#ifdef OMG_TEST
   printf("query sql:%s\n", sql);
 #endif
 
@@ -1176,6 +1169,7 @@ void omg_free_gist(omg_gist *gist) {
     FREE_OBJ_FIELD(gist, id);
     FREE_OBJ_FIELD(gist, created_at);
     FREE_OBJ_FIELD(gist, description);
+    FREE_OBJ_FIELD(gist, _files_as_json);
     omg_gist_file *file = &gist->file;
     FREE_OBJ_FIELD(file, filename);
     FREE_OBJ_FIELD(file, language);
@@ -1321,12 +1315,17 @@ omg_error omg_query_gists_common(omg_context ctx, bool is_star,
   char sql[512];
   sprintf(sql,
           "select g.id, datetime(created_at, 'localtime'), g.description, "
-          "value ->> 'filename', "
-          "value ->> 'language', "
-          "value ->> 'raw_url', "
-          "value ->> 'size' "
-          "from %s g, json_each(files) "
-          "order by g.created_at desc",
+          "json_extract(value, '$.filename'),"
+          "json_extract(value, '$.language'),"
+          "json_extract(value, '$.raw_url'),"
+          "json_extract(value, '$.size')"
+          // ->> require sqlite3 3.38.0 (2022-02-22)
+          /* "value ->> 'filename', " */
+          /* "value ->> 'language', " */
+          /* "value ->> 'raw_url', " */
+          /* "value ->> 'size' " */
+          " from %s g, json_each(files) "
+          " order by g.created_at desc",
           is_star ? "omg_starred_gist_view" : "omg_created_gist_view");
 
 #ifdef OMG_TEST

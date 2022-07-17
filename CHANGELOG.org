@@ -13,6 +13,9 @@
 ** Bugfix
 - [core] Sync fetch no data
 - [emacs] pass wrong pipe =fd= to background thread
+- [core] fix =Source and destination overlap in mempcpy= when concat SQL in query repos
+** Internal Improvements
+- Add unittest, based on Zig
 * v0.6.0 (2022-06-25)
 ** New Features
 - Query trending support spoken languages filter

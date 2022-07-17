@@ -6,6 +6,8 @@
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
 
+[[https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml][https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml/badge.svg]]
+
 Oh My GitHub is a delightful, open source tool for managing your GitHub repositories/gists.
 
 There are mainly two user interfaces:
@@ -103,7 +105,6 @@ The figure below shows relations among those mode:
 - macOS
 
 Dependencies can be found in [[file:Makefile][Makefile]]'s =install-deps= target
-- SQLite version requires at least [[https://sqlite.org/json1.html#jptr][3.38.0(2022-02-22)]], for json operators =->= =->>=
 * LICENSE
 Copyright (c) 2022 Jiacai Liu <jiacai2050+omg@gmail.com>
 
