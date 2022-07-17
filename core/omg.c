@@ -561,36 +561,29 @@ static omg_error prepare_query_repos_sql(omg_context ctx, bool is_star,
           first_column, table_name);
 
   if (!empty_string(keyword)) {
-    int current_len = sprintf(sql,
-                              "%s and (full_name like '%%%s%%' COLLATE NOCASE "
-                              "or description like '%%%s%%' COLLATE NOCASE)",
-                              sql, keyword, keyword);
-    if (current_len > SQL_DEFAULT_LEN) {
-      fprintf(stderr, "sql:%s, keyword:%s\n", sql, keyword);
-      return (omg_error){.code = OMG_CODE_INTERNAL,
-                         .message = "buffer not enough when append keyword"};
-    }
+    strcat(sql, " and (full_name like '%");
+    strcat(sql, keyword);
+    strcat(sql, "%' COLLATE NOCASE or description like '%");
+    strcat(sql, keyword);
+    strcat(sql, "%' COLLATE NOCASE) ");
   }
 
   if (!empty_string(language)) {
-    int current_len =
-        sprintf(sql, "%s and lang='%s' COLLATE NOCASE", sql, language);
-    if (current_len > SQL_DEFAULT_LEN) {
-      fprintf(stderr, "sql:%s, lang:%s\n", sql, language);
-      return (omg_error){.code = OMG_CODE_INTERNAL,
-                         .message = "buffer not enough when append language"};
-    }
+    strcat(sql, " and lang='");
+    strcat(sql, language);
+    strcat(sql, "' COLLATE NOCASE ");
   }
 
-  const char *sort_column = is_star ? "starred_at" : "created_at";
-  int current_len = sprintf(sql, "%s order by %s desc", sql, sort_column);
-  if (current_len > SQL_DEFAULT_LEN) {
-    fprintf(stderr, "sql:%s, current:%d, len:%zu\n", sql, current_len,
-            strlen(sql));
+  strcat(sql, " order by ");
+  strcat(sql, is_star ? "starred_at" : "created_at");
+  strcat(sql, " desc");
+  int current_len = strlen(sql);
+  if (current_len >= SQL_DEFAULT_LEN) {
+    fprintf(stderr, "SQL too long. max:%d, sql:%s\n", current_len, sql);
     return (omg_error){.code = OMG_CODE_INTERNAL,
                        .message = "buffer not enough when append order_by"};
   }
-#ifdef VERBOSE
+#ifdef OMG_TEST
   printf("query sql:%s\n", sql);
 #endif
 

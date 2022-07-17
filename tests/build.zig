@@ -17,8 +17,8 @@ pub fn build(b: *std.build.Builder) void {
     exe.addIncludeDir("../core");
     exe.addCSourceFile("../core/omg.c", &[_][]const u8{
         "-std=c99",
-        "-DOMG_TEST=1",
-        "-DOMG_VERBOSE=1",
+        "-DOMG_TEST",
+        // "-DVERBOSE",
     });
     exe.linkSystemLibrary("sqlite3");
     exe.linkSystemLibrary("libcurl");
