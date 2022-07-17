@@ -98,7 +98,7 @@ pub fn main() anyerror!void {
         break :init ctx;
     };
     defer clib.omg_free_context(&ctx);
-    // defer fs.deleteFileAbsolute(db_path) catch {};
+    defer fs.deleteFileAbsolute(db_path) catch {};
 
     try test_download(ctx);
     try test_created_repos(ctx);
