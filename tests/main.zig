@@ -20,11 +20,13 @@ fn test_download(ctx: ?*clib.struct_omg_context) anyerror!void {
     const url = "https://httpbin.org/anything";
     try check_error(clib.omg_download(ctx, url, dst_file));
 
-    const f = try fs.openFileAbsolute(dst_file, fs.File.OpenFlags{ .read = true, .write = false, .lock = fs.File.Lock.None });
+    const f = try fs.openFileAbsolute(dst_file, .{
+        .read = true,
+    });
     defer f.close();
 
     var buf: [1024]u8 = undefined;
-    const bytes_read = try f.read(buf[0..]);
+    const bytes_read = try f.readAll(buf[0..]);
     log.debug("file read, len:{d}, body:{s}", .{ bytes_read, buf[0..bytes_read] });
     const Payload = struct { url: []const u8 };
 
@@ -39,8 +41,8 @@ fn test_download(ctx: ?*clib.struct_omg_context) anyerror!void {
     );
 
     log.info("payload url {s}", .{payload.url});
-    try testing.expect(mem.eql(u8, payload.url, url.*[0..]));
-    try testing.expectEqualStrings(url.*[0..], payload.url);
+    try testing.expect(mem.eql(u8, payload.url, url[0..]));
+    try testing.expectEqualStrings(url[0..], payload.url);
 }
 
 fn test_created_repos(ctx: ?*clib.struct_omg_context) anyerror!void {
@@ -87,7 +89,15 @@ fn test_created_gists(ctx: ?*clib.struct_omg_context) anyerror!void {
 }
 
 pub fn main() anyerror!void {
-    log.info("Run omg test...", .{});
+    log.info(
+        \\
+        \\      ___  __  __  ___
+        \\     / _ \|  \/  |/ __|
+        \\    | (_) | |\/| | (_ |
+        \\     \___/|_|  |_|\___|
+        \\
+    , .{});
+    log.info("Run oh-my-github test...", .{});
     const db_path = os.getenv("DB_PATH").?;
     var ctx = init: {
         const token = os.getenv("GITHUB_TOKEN").?;
