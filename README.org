@@ -12,23 +12,22 @@ Oh My GitHub is a delightful, open source tool for managing your GitHub reposito
 
 * Features
 - Support local storage(SQLite)
-  - GitHub synchronization is only required on first use
 - Rich search syntax
 - Fast. Oh My GitHub's core is built in GNU99 C (tested with [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]])
 
 There are mainly two user interfaces:
 - Emacs. Full-featured
-  - *Sync* repositories(created and starred)
-  - *Query repositories*
-    - *Unstar*
-    - *Query latest commits*
-    - *Query latest releases*
-    - *Download release asset files*
-  - *Query created/starred gists*
+  - Sync
+  - Query repositories
+    - Unstar
+    - Query latest commits
+    - Query latest releases
+    - Download release asset files
+  - Query created/starred gists
 
 - CLI, TBD
-  - *Sync*
-  - *Query repositories*
+  - Sync
+  - Query repositories
 * Emacs Interface
 ** Install
 1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][oh-my-github.el]]

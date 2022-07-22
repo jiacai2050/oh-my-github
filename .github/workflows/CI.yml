@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: goto-bus-stop/setup-zig@v1
         with:
-          version: 0.9.1
+          version: 0.10.0-dev.3071+8e75ba653
       - shell: bash
         run: |
           make install-deps

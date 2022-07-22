@@ -20,9 +20,7 @@ fn test_download(ctx: ?*clib.struct_omg_context) anyerror!void {
     const url = "https://httpbin.org/anything";
     try check_error(clib.omg_download(ctx, url, dst_file));
 
-    const f = try fs.openFileAbsolute(dst_file, .{
-        .read = true,
-    });
+    const f = try fs.openFileAbsolute(dst_file, .{});
     defer f.close();
 
     var buf: [1024]u8 = undefined;
@@ -31,11 +29,14 @@ fn test_download(ctx: ?*clib.struct_omg_context) anyerror!void {
     const Payload = struct { url: []const u8 };
 
     var stream = std.json.TokenStream.init(buf[0..bytes_read]);
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
     const payload = try std.json.parse(
         Payload,
         &stream,
         .{
-            .allocator = testing.allocator,
+            .allocator = allocator,
             .ignore_unknown_fields = true,
         },
     );
