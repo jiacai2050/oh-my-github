@@ -13,7 +13,7 @@ Oh My GitHub is a delightful, open source tool for managing your GitHub reposito
 * Features
 - Support local storage(SQLite)
 - Rich search syntax
-- Fast. Oh My GitHub's core is built in GNU99 C (tested with [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]])
+- Fast. Oh My GitHub's core is built in [[https://gcc.gnu.org/onlinedocs/gcc/Standards.html][GNU99]] C (tested with [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]])
 
 There are mainly two user interfaces:
 - Emacs. Full-featured

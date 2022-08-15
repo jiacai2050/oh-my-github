@@ -31,14 +31,17 @@ static void free_response(response *resp) {
   }
 }
 
-static void free_curl_slist(struct curl_slist **lst) {
-  if (*lst) {
-#ifdef VERBOSE
-    printf("free curl list, body is %s\n", (*lst)->data);
-#endif
-    curl_slist_free_all(*lst);
-  }
-}
+/* static void free_curl_slist(struct curl_slist **lst) { */
+/*   if (*lst) { */
+/* #ifdef VERBOSE */
+/*     printf("free curl list, body is %s\n", (*lst)->data); */
+/* #endif */
+/*     curl_slist_free_all(*lst); */
+/*   } */
+/* } */
+
+/* #define auto_curl_slist \ */
+/*   struct curl_slist __attribute__((cleanup(free_curl_slist))) */
 
 static void free_curl_handler(CURL **curl) {
   if (*curl) {
@@ -49,8 +52,6 @@ static void free_curl_handler(CURL **curl) {
   }
 }
 
-#define auto_curl_slist                                                        \
-  struct curl_slist __attribute__((cleanup(free_curl_slist)))
 #define auto_response response __attribute__((cleanup(free_response)))
 #define auto_curl CURL __attribute__((cleanup(free_curl_handler)))
 
@@ -437,7 +438,7 @@ static omg_error save_repos(omg_context ctx, omg_repo_list repo_lst) {
   if (rc) {
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
   }
-  for (int i = 0; i < repo_lst.length; i++) {
+  for (size_t i = 0; i < repo_lst.length; i++) {
     omg_repo repo = repo_lst.repo_array[i];
     int column = 1;
     sqlite3_bind_int(stmt, column++, repo.id);
@@ -499,7 +500,7 @@ static omg_error save_created_repos(omg_context ctx, omg_repo_list repo_lst) {
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
   }
 
-  for (int i = 0; i < repo_lst.length; i++) {
+  for (size_t i = 0; i < repo_lst.length; i++) {
     omg_repo repo = repo_lst.repo_array[i];
     sqlite3_bind_int(stmt, 1, repo.id);
     rc = sqlite3_step(stmt);
@@ -577,9 +578,9 @@ static omg_error prepare_query_repos_sql(omg_context ctx, bool is_star,
   strcat(sql, " order by ");
   strcat(sql, is_star ? "starred_at" : "created_at");
   strcat(sql, " desc");
-  int current_len = strlen(sql);
+  size_t current_len = strlen(sql);
   if (current_len >= SQL_DEFAULT_LEN) {
-    fprintf(stderr, "SQL too long. max:%d, sql:%s\n", current_len, sql);
+    fprintf(stderr, "SQL too long. max:%ld, sql:%s\n", current_len, sql);
     return (omg_error){.code = OMG_CODE_INTERNAL,
                        .message = "buffer not enough when append order_by"};
   }
@@ -752,7 +753,7 @@ omg_error omg_query_starred_repos(omg_context ctx, const char *keyword,
 static omg_error save_starred_repos(omg_context ctx,
                                     omg_starred_repo_list star_lst) {
   omg_repo *repo_arr = malloc(sizeof(omg_repo) * star_lst.length);
-  for (int i = 0; i < star_lst.length; i++) {
+  for (size_t i = 0; i < star_lst.length; i++) {
     repo_arr[i] = star_lst.star_array[i].repo;
   }
   omg_repo_list repo_lst = {.repo_array = repo_arr, .length = star_lst.length};
@@ -772,7 +773,7 @@ static omg_error save_starred_repos(omg_context ctx,
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
   }
 
-  for (int i = 0; i < star_lst.length; i++) {
+  for (size_t i = 0; i < star_lst.length; i++) {
     omg_starred_repo star = star_lst.star_array[i];
     sqlite3_bind_text(stmt, 1, star.starred_at, -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 2, star.repo.id);
@@ -932,7 +933,7 @@ void omg_free_commit(omg_commit *commit) {
 
 void omg_free_commit_list(omg_commit_list *commit_lst) {
   if (commit_lst) {
-    for (int i = 0; i < commit_lst->length; i++) {
+    for (size_t i = 0; i < commit_lst->length; i++) {
       omg_free_commit(&commit_lst->commit_array[i]);
     }
 
@@ -952,7 +953,7 @@ omg_error omg_query_commits(omg_context ctx, const char *full_name, int limit,
 
   size_t resp_len = json_array_size(resp);
   omg_commit *commit_array = malloc(sizeof(omg_commit) * resp_len);
-  for (int i = 0; i < resp_len; i++) {
+  for (size_t i = 0; i < resp_len; i++) {
     json_t *one_commit = json_array_get(resp, i);
     json_t *commit_info = json_object_get(one_commit, "commit");
     json_t *author_info = json_object_get(commit_info, "author");
@@ -997,7 +998,7 @@ void omg_free_release(omg_release *release) {
 
 void omg_free_release_list(omg_release_list *release_lst) {
   if (release_lst) {
-    for (int i = 0; i < release_lst->length; i++) {
+    for (size_t i = 0; i < release_lst->length; i++) {
       omg_free_release(&release_lst->release_array[i]);
     }
 
@@ -1017,7 +1018,7 @@ omg_error omg_query_releases(omg_context ctx, const char *full_name, int limit,
 
   size_t resp_len = json_array_size(resp);
   omg_release *release_array = malloc(sizeof(omg_release) * resp_len);
-  for (int i = 0; i < resp_len; i++) {
+  for (size_t i = 0; i < resp_len; i++) {
     json_t *one_release = json_array_get(resp, i);
     json_t *asset_info = json_object_get(one_release, "assets");
     json_t *author_info = json_object_get(one_release, "author");
@@ -1025,7 +1026,7 @@ omg_error omg_query_releases(omg_context ctx, const char *full_name, int limit,
     size_t asset_length = json_array_size(asset_info);
     omg_release_asset *asset_array =
         malloc(sizeof(omg_release_asset) * asset_length);
-    for (int j = 0; j < asset_length; j++) {
+    for (size_t j = 0; j < asset_length; j++) {
       json_t *one_asset = json_array_get(asset_info, j);
       asset_array[j] = (omg_release_asset){
           .id = json_integer_value(json_object_get(one_asset, "id")),
@@ -1085,14 +1086,14 @@ static omg_error omg_parse_trending(omg_context ctx, const char *html,
 
   const char *head = html;
   size_t arr_len = 0;
-  for (int i = 0; i < TRENDING_LIST_LENGTH; i++) {
+  for (size_t i = 0; i < TRENDING_LIST_LENGTH; i++) {
     if (pcre2_regexec(&ctx->trending_re, head, TRENDING_TUPLE_LENGTH, pmatch,
                       0)) {
       break;
     }
     arr_len++;
     char *matched[TRENDING_TUPLE_LENGTH];
-    for (int j = 1; j < TRENDING_TUPLE_LENGTH; j++) {
+    for (size_t j = 1; j < TRENDING_TUPLE_LENGTH; j++) {
       regoff_t len = pmatch[j].rm_eo - pmatch[j].rm_so;
 
       char *buf = malloc(len + 1);
@@ -1261,7 +1262,7 @@ static omg_error omg_save_gists(omg_context ctx, bool is_star,
     return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
   }
 
-  for (int i = 0; i < lst.length; i++) {
+  for (size_t i = 0; i < lst.length; i++) {
     sqlite3_bind_text(stmt, 1, lst.gist_array[i].id, -1, SQLITE_STATIC);
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE) {
