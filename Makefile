@@ -47,7 +47,7 @@ ifeq ($(ENABLE_ASAN), 1)
 	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 endif
 
-CC = gcc
+CC := zig cc
 
 .DEFAULT_GOAL := $(CLI)
 

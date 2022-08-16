@@ -31,8 +31,6 @@ omg_error omg_setup_context(const char *path, const char *github_token,
 void omg_free_context(omg_context *ctx);
 #define omg_auto_context omg_context __attribute__((cleanup(omg_free_context)))
 
-omg_error omg_download(omg_context ctx, const char *url, const char *filename);
-
 typedef struct {
   int id;
   const char *full_name;
@@ -227,5 +225,8 @@ omg_error omg_query_created_gists(omg_context ctx, omg_gist_list *out);
 omg_error omg_query_starred_gists(omg_context ctx, omg_gist_list *out);
 omg_error omg_delete_gist(omg_context ctx, char *gist_id);
 omg_error omg_unstar_gist(omg_context ctx, char *gist_id);
+
+// Utils
+omg_error omg_download(omg_context ctx, const char *url, const char *filename);
 
 #endif

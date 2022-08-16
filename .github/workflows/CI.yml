@@ -22,16 +22,23 @@ env:
 jobs:
   test:
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: 0.10.0-dev.3071+8e75ba653
-      - shell: bash
+      - run: make install-deps
+      - name: test compile
+        run: make
+      - working-directory: tests
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          make install-deps
-          cd tests && zig build --verbose
+          zig build --verbose
           TEST_BINARY=./zig-out/bin/omg-test
           valgrind --leak-check=full --tool=memcheck \
           --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY}

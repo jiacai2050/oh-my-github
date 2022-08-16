@@ -9,12 +9,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-// libcurl related
 const char *HEADER_ACCEPT = "Accept: application/vnd.github.v3.star+json";
 const char *HEADER_UA = "User-Agent: omg-client/0.1.0";
 const char *API_ROOT = "https://api.github.com";
 const char *GET_METHOD = "GET";
 const char *DELETE_METHOD = "DELETE";
+const char *POST_METHOD = "POST";
+// utils
+#ifdef OMG_TEST
+const size_t PER_PAGE = 10;
+#else
+const size_t PER_PAGE = 100;
+#endif
+
+const size_t SQL_DEFAULT_LEN = 512;
+
+// matched groups:
+// 1. desc
+// 2. full_name
+// 3. current stats
+//
+// There is no language in some repositories, so don't parse it now
+static const char *const RE =
+    "<p class=\"col-9 color-fg-muted my-1 pr-4\">\\s+(.+?)\\s+</p>"
+    /* ".+?(<span itemprop=\"programmingLanguage\">(\\S+)</span>)?" */
+    ".+?<a href=\"/(\\S+/\\S+)/stargazers.*?(\\d+(?:,\\d+)*) stars "
+    "(today|this)";
 
 typedef struct {
   char *memory;
@@ -73,27 +93,6 @@ static size_t mem_cb(void *contents, size_t size, size_t nmemb, void *userp) {
   return realsize;
 }
 
-// utils
-#ifdef OMG_TEST
-const size_t PER_PAGE = 10;
-#else
-const size_t PER_PAGE = 100;
-#endif
-
-const size_t SQL_DEFAULT_LEN = 512;
-
-// matched groups:
-// 1. desc
-// 2. full_name
-// 3. current stats
-//
-// There is no language in some repositories, so don't parse it now
-static const char *const RE =
-    "<p class=\"col-9 color-fg-muted my-1 pr-4\">\\s+(.+?)\\s+</p>"
-    /* ".+?(<span itemprop=\"programmingLanguage\">(\\S+)</span>)?" */
-    ".+?<a href=\"/(\\S+/\\S+)/stargazers.*?(\\d+(?:,\\d+)*) stars "
-    "(today|this)";
-
 void omg_free_char(char **buf) {
   if (*buf) {
 #ifdef VERBOSE
@@ -121,7 +120,6 @@ static void free_stmt(sqlite3_stmt **stmt) {
 
 #define auto_sqlite3_stmt sqlite3_stmt *__attribute__((cleanup(free_stmt)))
 
-// actual omg implementation
 struct omg_context {
   sqlite3 *db;
   // Used for api.github.com
@@ -165,13 +163,18 @@ void omg_free_context(omg_context *ctx) {
   }
 }
 
-static omg_error init_db(const char *root, sqlite3 **out_db) {
+typedef struct {
+  sqlite3 *db;
+  omg_error err;
+} db_t;
+
+static db_t init_db(const char *root) {
   sqlite3 *db = NULL;
   int ret = sqlite3_open(root, &db);
   if (ret) {
     const char *msg = sqlite3_errmsg(db);
     sqlite3_close(db);
-    return (omg_error){.code = OMG_CODE_DB, .message = msg};
+    return (db_t){.err = {.code = OMG_CODE_DB, .message = msg}};
   }
 
   char *err_msg = NULL;
@@ -180,11 +183,10 @@ static omg_error init_db(const char *root, sqlite3 **out_db) {
   if (ret) {
     fprintf(stderr, "exec create table sql failed:%s\n", err_msg);
     sqlite3_free(err_msg);
-    return (omg_error){.code = OMG_CODE_DB, .message = "exec sql failed"};
+    return (db_t){.err = {.code = OMG_CODE_DB, .message = "exec sql failed"}};
   }
 
-  *out_db = db;
-  return NO_ERROR;
+  return (db_t){.db = db};
 }
 
 omg_error omg_setup_context(const char *path, const char *github_token,
@@ -217,10 +219,9 @@ omg_error omg_setup_context(const char *path, const char *github_token,
     return (omg_error){.code = OMG_CODE_CURL, .message = "append3 header"};
   }
   curl_easy_setopt(api_curl, CURLOPT_HTTPHEADER, api_headers);
-  sqlite3 *db = NULL;
-  omg_error err = init_db(path, &db);
-  if (!is_ok(err)) {
-    return err;
+  db_t db = init_db(path);
+  if (!is_ok(db.err)) {
+    return db.err;
   }
 
   CURL *trending_curl = curl_easy_init();
@@ -243,7 +244,7 @@ omg_error omg_setup_context(const char *path, const char *github_token,
                        .message = "init trending regexp"};
   }
   omg_context ctx = malloc(sizeof(struct omg_context));
-  ctx->db = db;
+  ctx->db = db.db;
   ctx->api_curl = api_curl;
   ctx->api_headers = api_headers;
   ctx->trending_curl = trending_curl;
