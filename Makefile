@@ -49,7 +49,7 @@ endif
 
 CC := zig cc
 
-.DEFAULT_GOAL := $(CLI)
+all: $(CLI) emacs-dyn
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -641,8 +641,8 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   "Local keymap for oh-my-github-stars mode buffers.")
 
 (define-derived-mode oh-my-github-trendings-mode oh-my-github-repos-mode "oh-my-github trendings" "Display Trendings of GitHub repository"
-  (setq tabulated-list-format [("Recent Stars" 12 t)
-                               ("Repository" 25)
+  (setq tabulated-list-format [("Repository" 25)
+                               ("Recent Stars" 12 t)
                                ("Description" 5)]
         tabulated-list-padding 2
         tabulated-list-sort-key nil

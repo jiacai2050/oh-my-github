@@ -37,7 +37,7 @@ const char *PIPE_EOF = "\n\n";
 #define lisp_string(env, string)                                               \
   ({                                                                           \
     emacs_env *_env_ = env;                                                    \
-    char *_str_ = string;                                                      \
+    const char *_str_ = string;                                                \
     _str_ ? _env_->make_string(_env_, _str_, strlen(_str_))                    \
           : _env_->make_string(_env_, "", 0);                                  \
   })
@@ -52,7 +52,6 @@ const char *PIPE_EOF = "\n\n";
 
 #define lisp_text_button(env, label, ...)                                      \
   ({                                                                           \
-    emacs_env *_env_ = env;                                                    \
     lisp_funcall(env, "cons", label,                                           \
                  lisp_funcall(env, "list", lisp_symbol(env, "face"), Qnil,     \
                               __VA_ARGS__));                                   \
@@ -106,7 +105,7 @@ static char *string_or_empty(const char *s) {
 static char *human_size(int size) {
   static char *units[] = {"B", "KB", "MB", "GB"};
   static size_t unit_len = 4;
-  int order = 0;
+  size_t order = 0;
   double d = (double)size;
   while (d >= 1024 && order < unit_len) {
     order++;
@@ -117,8 +116,8 @@ static char *human_size(int size) {
   return buf;
 }
 
-static emacs_value omg_dyn_emacs_button(emacs_env *env, char *label,
-                                        char *help_echo) {
+static emacs_value omg_dyn_emacs_button(emacs_env *env, const char *label,
+                                        const char *help_echo) {
   return lisp_funcall(env, "cons", lisp_string(env, label),
                       lisp_funcall(env, "list",
                                    // display as plain text
@@ -168,7 +167,7 @@ emacs_value omg_dyn_query_created_repos(emacs_env *env, ptrdiff_t nargs,
   }
   emacs_value repo_vector = lisp_funcall(
       env, "make-vector", lisp_integer(env, repo_lst.length), Qnil);
-  for (int i = 0; i < repo_lst.length; i++) {
+  for (size_t i = 0; i < repo_lst.length; i++) {
     omg_repo repo = repo_lst.repo_array[i];
     emacs_value row = omg_dyn_query_common(env, repo.created_at, false, repo);
     lisp_funcall(env, "aset", repo_vector, lisp_integer(env, i), row);
@@ -201,7 +200,7 @@ emacs_value omg_dyn_query_starred_repos(emacs_env *env, ptrdiff_t nargs,
 
   emacs_value star_vector = lisp_funcall(
       env, "make-vector", lisp_integer(env, star_lst.length), Qnil);
-  for (int i = 0; i < star_lst.length; i++) {
+  for (size_t i = 0; i < star_lst.length; i++) {
     omg_repo repo = star_lst.star_array[i].repo;
     emacs_value row = omg_dyn_query_common(
         env, star_lst.star_array[i].starred_at, true, repo);
@@ -229,7 +228,7 @@ static emacs_value omg_dyn_query_gists_common(emacs_env *env, bool is_star) {
 
   emacs_value gist_vector = lisp_funcall(
       env, "make-vector", lisp_integer(env, star_lst.length), Qnil);
-  for (int i = 0; i < star_lst.length; i++) {
+  for (size_t i = 0; i < star_lst.length; i++) {
     omg_gist gist = star_lst.gist_array[i];
     omg_auto_char readable_size = human_size(gist.file.size);
     emacs_value file_button = lisp_funcall(
@@ -280,15 +279,15 @@ emacs_value omg_dyn_query_trendings(emacs_env *env, ptrdiff_t nargs,
 
   emacs_value repo_vector = lisp_funcall(
       env, "make-vector", lisp_integer(env, repo_lst.length), Qnil);
-  for (int i = 0; i < repo_lst.length; i++) {
+  for (size_t i = 0; i < repo_lst.length; i++) {
     omg_repo repo = repo_lst.repo_array[i];
     emacs_value row = lisp_funcall(
         env, "list",
         lisp_funcall(env, "number-to-string", lisp_integer(env, i)),
         lisp_funcall(env, "vector",
+                     omg_dyn_emacs_button(env, repo.full_name, repo.full_name),
                      lisp_funcall(env, "number-to-string",
                                   lisp_integer(env, repo.stargazers_count)),
-                     lisp_string(env, (char *)repo.full_name),
                      lisp_string(env, string_or_empty(repo.description)), ));
     lisp_funcall(env, "aset", repo_vector, lisp_integer(env, i), row);
   }
@@ -496,11 +495,11 @@ emacs_value omg_dyn_query_commits(emacs_env *env, ptrdiff_t nargs,
 
   emacs_value commit_vector = lisp_funcall(
       env, "make-vector", lisp_integer(env, commit_lst.length), Qnil);
-  for (int i = 0; i < commit_lst.length; i++) {
+  for (size_t i = 0; i < commit_lst.length; i++) {
     omg_commit commit = commit_lst.commit_array[i];
 
     char id[3];
-    sprintf(id, "%d", i);
+    sprintf(id, "%zu", i);
 
     omg_auto_char short_sha = shorten_sha(commit.sha);
 
@@ -540,7 +539,7 @@ emacs_value omg_dyn_query_releases(emacs_env *env, ptrdiff_t nargs,
 
   emacs_value release_vector = lisp_funcall(
       env, "make-vector", lisp_integer(env, release_lst.length), Qnil);
-  for (int i = 0; i < release_lst.length; i++) {
+  for (size_t i = 0; i < release_lst.length; i++) {
     omg_release release = release_lst.release_array[i];
 
     emacs_value asset_vector = lisp_funcall(
