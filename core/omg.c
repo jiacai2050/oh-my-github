@@ -15,6 +15,7 @@ const char *API_ROOT = "https://api.github.com";
 const char *GET_METHOD = "GET";
 const char *DELETE_METHOD = "DELETE";
 const char *POST_METHOD = "POST";
+const char *PATCH_METHOD = "PATCH";
 // utils
 #ifdef OMG_TEST
 const size_t PER_PAGE = 10;
@@ -295,12 +296,14 @@ static omg_error omg_request(omg_context ctx, const char *method,
     }
   }
 
-  json_error_t error;
-  json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
-  if (!resp) {
-    return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
+  if (out) {
+    json_error_t error;
+    json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
+    if (!resp) {
+      return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
+    }
+    *out = resp;
   }
-  *out = resp;
 
   return NO_ERROR;
 }
@@ -1409,4 +1412,51 @@ omg_error omg_unstar_gist(omg_context ctx, char *gist_id) {
   char url[128];
   sprintf(url, "%s/gists/%s/star", API_ROOT, gist_id);
   return omg_request(ctx, DELETE_METHOD, url, NULL, NULL);
+}
+
+omg_error omg_create_pull(omg_context ctx, const char *full_name,
+                          const char *title, const char *body, const char *head,
+                          const char *base, bool draft, omg_pull *out) {
+  char url[256];
+  sprintf(url, "%s/repos/%s/pulls", API_ROOT, full_name);
+  json_auto_t *request = json_object();
+  json_object_set_new(request, "title", json_string(title));
+  json_object_set_new(request, "body", json_string(body));
+  json_object_set_new(request, "head", json_string(head));
+  json_object_set_new(request, "base", json_string(base));
+  json_object_set_new(request, "draft", json_boolean(draft));
+
+  json_auto_t *response = NULL;
+  omg_error err = omg_request(ctx, POST_METHOD, url, request, &response);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  *out = (omg_pull){
+      .number = (int32_t)json_number_value(json_object_get(response, "number")),
+      .additions =
+          (int32_t)json_number_value(json_object_get(response, "additions")),
+      .commits =
+          (int32_t)json_number_value(json_object_get(response, "commits")),
+      .deletions =
+          (int32_t)json_number_value(json_object_get(response, "deletions")),
+  };
+
+  return NO_ERROR;
+}
+
+omg_error omg_toggle_pull(omg_context ctx, const char *full_name,
+                          int32_t pull_number, bool close) {
+
+  char url[256];
+  sprintf(url, "%s/repos/%s/pulls/%d", API_ROOT, full_name, pull_number);
+
+  json_auto_t *request = json_object();
+  if (close) {
+    json_object_set_new(request, "state", json_string("closed"));
+  } else {
+    json_object_set_new(request, "state", json_string("open"));
+  }
+
+  return omg_request(ctx, PATCH_METHOD, url, request, NULL);
 }

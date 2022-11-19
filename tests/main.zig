@@ -3,7 +3,6 @@ const clib = @cImport({
 });
 const std = @import("std");
 const testing = std.testing;
-const os = std.os;
 const fs = std.fs;
 const log = std.log;
 const mem = std.mem;
@@ -89,6 +88,34 @@ fn test_created_gists(ctx: ?*clib.struct_omg_context) anyerror!void {
     try testing.expect(gist_list.gist_array != null);
 }
 
+fn test_create_pull(ctx: ?*clib.struct_omg_context) anyerror!void {
+    var resp = clib.omg_pull{
+        .number = -1,
+        .commits = -1,
+        .additions = -1,
+        .deletions = -1,
+    };
+    const full_name = "jiacai2050/oh-my-github";
+    try check_error(clib.omg_create_pull(
+        ctx,
+        full_name,
+        "title: test create PR",
+        \\ # hello
+        \\ just a test
+    ,
+        "jiacai2050:feat-gist",
+        "master",
+        false, // draft
+        &resp,
+    ));
+    defer check_error(clib.omg_toggle_pull(ctx, full_name, resp.number, true)) catch {};
+
+    try testing.expect(resp.number > 0);
+    try testing.expectEqual(@as(i32, 6), resp.commits);
+    try testing.expectEqual(@as(i32, 940), resp.additions);
+    try testing.expectEqual(@as(i32, 330), resp.deletions);
+}
+
 pub fn main() anyerror!void {
     log.info(
         \\
@@ -99,19 +126,20 @@ pub fn main() anyerror!void {
         \\
     , .{});
     log.info("Run oh-my-github test...", .{});
-    const db_path = os.getenv("DB_PATH").?;
+    const db_path = std.c.getenv("DB_PATH").?;
     var ctx = init: {
-        const token = os.getenv("GITHUB_TOKEN").?;
+        const token = std.c.getenv("GITHUB_TOKEN").?;
         var ctx: ?*clib.struct_omg_context = null;
 
-        const err = clib.omg_setup_context(@ptrCast([*c]const u8, db_path), @ptrCast([*c]const u8, token), &ctx);
+        const err = clib.omg_setup_context(db_path, token, &ctx);
         try testing.expect(clib.is_ok(err));
         break :init ctx;
     };
     defer clib.omg_free_context(&ctx);
-    defer fs.deleteFileAbsolute(db_path) catch {};
+    defer fs.deleteFileAbsolute(db_path[0..std.mem.len(db_path)]) catch {};
 
     try test_download(ctx);
     try test_created_repos(ctx);
     try test_created_gists(ctx);
+    try test_create_pull(ctx);
 }

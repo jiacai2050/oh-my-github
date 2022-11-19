@@ -14,7 +14,7 @@ pub fn build(b: *std.build.Builder) void {
     const exe = b.addExecutable("omg-test", "main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
-    exe.addIncludeDir("../core");
+    exe.addIncludePath("../core");
     exe.addCSourceFile("../core/omg.c", &[_][]const u8{
         "-std=c99",
         "-DOMG_TEST",
@@ -39,7 +39,4 @@ pub fn build(b: *std.build.Builder) void {
     const exe_tests = b.addTest("main.zig");
     exe_tests.setTarget(target);
     exe_tests.setBuildMode(mode);
-
-    const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&exe_tests.step);
 }

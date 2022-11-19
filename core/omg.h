@@ -1,6 +1,7 @@
 #ifndef OMG_H
 #define OMG_H
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #define OMG_CODE_OK 0
@@ -225,6 +226,22 @@ omg_error omg_query_created_gists(omg_context ctx, omg_gist_list *out);
 omg_error omg_query_starred_gists(omg_context ctx, omg_gist_list *out);
 omg_error omg_delete_gist(omg_context ctx, char *gist_id);
 omg_error omg_unstar_gist(omg_context ctx, char *gist_id);
+
+// Pull requests
+typedef struct {
+  int32_t number;
+  int32_t commits;
+  int32_t additions;
+  int32_t deletions;
+} omg_pull;
+
+omg_error omg_create_pull(omg_context ctx, const char *full_name,
+                          const char *title, const char *body, const char *head,
+                          const char *base, bool draft, omg_pull *out);
+
+// open / close
+omg_error omg_toggle_pull(omg_context ctx, const char *full_name,
+                          int32_t pull_number, bool close);
 
 // Utils
 omg_error omg_download(omg_context ctx, const char *url, const char *filename);
