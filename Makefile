@@ -25,7 +25,7 @@ EMACS_HEADERS = $(COMMON_HEADERS)
 # Why -fPIC https://stackoverflow.com/a/5311665/2163429
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix) -fPIC \
 	-std=gnu99 -Wall -Wextra -Werror -Wno-unused-parameter \
-	-Wpedantic -Wno-gnu
+	-Wpedantic -Wno-gnu -Wimplicit-fallthrough
 
 ifeq ($(OMG_TEST), 1)
 	CFLAGS += -D OMG_TEST
@@ -47,7 +47,11 @@ ifeq ($(ENABLE_ASAN), 1)
 	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 endif
 
-CC := zig cc
+ifeq (, $(shell which zig))
+	CC := gcc
+else
+	CC := zig cc
+endif
 
 all: $(CLI) emacs-dyn
 
