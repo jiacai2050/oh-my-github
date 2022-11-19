@@ -103,6 +103,8 @@ void omg_free_char(char **buf) {
   }
 }
 
+#define auto_string char *__attribute__((cleanup(omg_free_char)))
+
 static char *strdup_when_not_null(const unsigned char *input) {
   if (input) {
     return strdup((const char *)input);
@@ -261,11 +263,11 @@ static omg_error omg_request(omg_context ctx, const char *method,
   CURL *curl = ctx->api_curl;
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
+  auto_string request = NULL;
   if (payload) {
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_dumps(payload, 0));
-  } else {
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
+    request = json_dumps(payload, 0);
   }
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request);
   curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, method);
 
   auto_response chunk = {.memory = malloc(1), .size = 0};

@@ -16,7 +16,7 @@ pub fn build(b: *std.build.Builder) void {
     exe.setBuildMode(mode);
     exe.addIncludePath("../core");
     exe.addCSourceFile("../core/omg.c", &[_][]const u8{
-        "-std=c99",
+        "-std=gnu99",
         "-DOMG_TEST",
         // "-DVERBOSE",
     });

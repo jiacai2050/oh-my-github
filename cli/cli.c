@@ -7,7 +7,7 @@
 
 static const omg_error NO_ERROR = {.code = OMG_CODE_OK};
 
-omg_error cli_print_help() {
+omg_error cli_print_help(void) {
   printf("%.*s\n", cli_help_txt_len, cli_help_txt);
   exit(1);
 }
