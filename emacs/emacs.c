@@ -2,6 +2,7 @@
 #include "emacs-module.h"
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -648,6 +649,38 @@ emacs_value omg_dyn_download(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
   return Qt;
 }
 
+emacs_value omg_dyn_create_pull(emacs_env *env, ptrdiff_t nargs,
+                                emacs_value *args, void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char title = get_string(env, args[0]);
+  omg_auto_char target_repo = get_string(env, args[1]);
+  omg_auto_char target_branch = get_string(env, args[2]);
+  omg_auto_char source_head = get_string(env, args[3]);
+  bool is_draft = (bool)env->extract_integer(env, args[4]);
+  omg_auto_char body = get_string(env, args[5]);
+
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_pull create_ret = {};
+  omg_error err = omg_create_pull(ctx, target_repo, title, body, source_head,
+                                  target_branch, is_draft, &create_ret);
+
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  return lisp_funcall(
+      env, "list",
+      // PR numbers
+      lisp_symbol(env, "number"), lisp_integer(env, create_ret.number),
+      // commits
+      lisp_symbol(env, "commits"), lisp_integer(env, create_ret.commits),
+      // additions
+      lisp_symbol(env, "additions"), lisp_integer(env, create_ret.additions),
+      // deletions
+      lisp_symbol(env, "deletions"), lisp_integer(env, create_ret.deletions));
+}
+
 emacs_value omg_dyn_setup(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                           void *data) {
   if (ctx) {
@@ -762,6 +795,10 @@ int emacs_module_init(runtime ert) {
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-query-trendings"),
                env->make_function(env, 3, 3, omg_dyn_query_trendings,
                                   "Query GitHub trendings", NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-create-pull"),
+               env->make_function(env, 6, 6, omg_dyn_create_pull,
+                                  "Create GitHub Pull Request", NULL));
 
   lisp_funcall(env, "provide", lisp_symbol(env, FEATURE_NAME));
 
