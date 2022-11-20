@@ -8,11 +8,14 @@
 
 * master(unrelease)
 
-** Imrovements
+** New Features
 - Simplify repositories UI
+- Add new option =oh-my-github-http-timeout=
+- Support create pull request [[https://github.com/jiacai2050/oh-my-github/pull/35][Pull Request #35]]
 ** Bugfix
 - [core] Sync fetch no data. [[https://github.com/jiacai2050/oh-my-github/commit/92cf16ea248d20d07c544e190760182d171f753c][92cf16e]]
 - [core] fix =Source and destination overlap in mempcpy= when concat SQL in query repos. [[https://github.com/jiacai2050/oh-my-github/pull/7][#7]]
+- [core] fix memleak when make HTTP request [[https://github.com/jiacai2050/oh-my-github/commit/4c4907ecd9e08f76fe56ea0f252e0dfd3b601ca4][4c4907e]]
 - [emacs] pass wrong pipe =fd= to background thread. [[https://github.com/jiacai2050/oh-my-github/commit/92cf16ea248d20d07c544e190760182d171f753c][92cf16e]]
 - [emacs] fix trending repo get full_name issue
 ** Internal Improvements
