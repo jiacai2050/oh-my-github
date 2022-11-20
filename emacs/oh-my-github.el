@@ -36,6 +36,7 @@
 (require 'omg-dyn)
 (require 'tabulated-list)
 (require 'seq)
+(require 'oh-my-github-pull)
 
 (defcustom oh-my-github-db-file (expand-file-name "oh-my-github.db" user-emacs-directory)
   "File where oh-my-github will store its database."
