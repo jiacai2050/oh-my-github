@@ -27,7 +27,7 @@ bool is_ok(omg_error err);
 typedef struct omg_context *omg_context;
 
 omg_error omg_setup_context(const char *path, const char *github_token,
-                            omg_context *out);
+                            int32_t timeout, omg_context *out);
 
 void omg_free_context(omg_context *ctx);
 #define omg_auto_context omg_context __attribute__((cleanup(omg_free_context)))

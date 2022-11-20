@@ -22,7 +22,7 @@ void delete_gist(omg_context ctx, char *gist_id) {
 
 omg_error cli_sync(const char *token, const char *db_path) {
   omg_auto_context ctx = NULL;
-  omg_error err = omg_setup_context(db_path, token, &ctx);
+  omg_error err = omg_setup_context(db_path, token, 10, &ctx);
   if (!is_ok(err)) {
     return err;
   }
@@ -49,7 +49,7 @@ omg_error cli_trendings(const char *token, const char *db_path,
                         // params not used now
                         const char *_params) {
   omg_auto_context ctx = NULL;
-  omg_error err = omg_setup_context(db_path, token, &ctx);
+  omg_error err = omg_setup_context(db_path, token, 10, &ctx);
   if (!is_ok(err)) {
     return err;
   }

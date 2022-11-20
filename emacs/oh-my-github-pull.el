@@ -9,8 +9,10 @@
   :group 'oh-my-github
   :type 'boolean)
 
-(defvar-local omg-pull-title ""
-  "The title of the new pull request.")
+(defcustom omg-pull-title-from-commit t
+  "If non-nil, use last commit message as pull title"
+  :group 'oh-my-github
+  :type 'boolean)
 
 (defvar-local omg-pull-target-repo ""
   "The full name of the repository you want the changes pulled into.
@@ -27,6 +29,8 @@ This should be an existing branch on the current repository.")
 
 (defvar omg--pull-buf-basename "*OMG Create Pull(%s)*")
 (defvar omg--pull-repo-root nil)
+(defconst omg--pull-header
+  "Edit, then submit with `\\[omg-pull-submit]', or cancel with `\\[omg-pull-cancel]'")
 
 (defun omg-pull-submit ()
   (interactive)
@@ -87,14 +91,20 @@ This should be an existing branch on the current repository.")
     (error "Not in a git repository"))
 
   (let* ((current-branch (string-trim (shell-command-to-string "git branch --show-current")))
-         (meta (format "#+TITLE: %s\n#+TARGET-REPO: %s\n#+TARGET-BRANCH: %s\n#+SOURCE-HEAD: %s\n#+DRAFT: %s\n"
-                       omg-pull-title
+         (meta (concat "#+TITLE: "
+                       (when omg-pull-title-from-commit
+                         (string-trim (shell-command-to-string "git show-branch --no-name HEAD")))
+                       "\n#+TARGET-REPO: "
                        omg-pull-target-repo
+                       "\n#+TARGET-BRANCH: "
                        omg-pull-target-branch
+                       "\n#+SOURCE-HEAD: "
                        (if omg-pull-username
                            (format "%s:%s" omg-pull-username current-branch)
                          current-branch)
-                       omg-pull-draft))
+                       "\n#+DRAFT: "
+                       omg-pull-draft
+                       "\n"))
          (template (omg-pull-get-template omg--pull-repo-root)))
     (with-current-buffer (get-buffer-create (format omg--pull-buf-basename omg--pull-repo-root))
       (beginning-of-buffer)
@@ -103,6 +113,7 @@ This should be an existing branch on the current repository.")
       (when template
         (insert (format "\n#+begin_export markdown\n%s\n#+end_export" template)))
       (omg-pull-create-mode)
+      (setq header-line-format (substitute-command-keys omg--pull-header))
       (switch-to-buffer (current-buffer)))))
 
 (provide 'oh-my-github-pull)

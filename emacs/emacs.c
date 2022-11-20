@@ -692,13 +692,14 @@ emacs_value omg_dyn_setup(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
 
   omg_auto_char db_path = get_string(env, args[0]);
   omg_auto_char github_token = get_string(env, args[1]);
+  int32_t timeout = env->extract_integer(env, args[2]);
 #ifdef VERBOSE
-  printf("path:%s, token:%s\n", db_path, github_token);
+  printf("path:%s, token:%s, timeout:%d\n", db_path, github_token, timeout);
 #endif
 
   ENSURE_NONLOCAL_EXIT(env);
 
-  omg_error err = omg_setup_context(db_path, github_token, &ctx);
+  omg_error err = omg_setup_context(db_path, github_token, timeout, &ctx);
   if (!is_ok(err)) {
     return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
   }
@@ -729,7 +730,7 @@ int emacs_module_init(runtime ert) {
   // export functions
   lisp_funcall(
       env, "fset", lisp_symbol(env, "omg-dyn-setup"),
-      env->make_function(env, 2, 2, omg_dyn_setup, "Initialize omg-dyn", NULL));
+      env->make_function(env, 3, 3, omg_dyn_setup, "Initialize omg-dyn", NULL));
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-teardown"),
                env->make_function(env, 0, 0, omg_dyn_teardown,

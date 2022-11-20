@@ -131,7 +131,7 @@ pub fn main() anyerror!void {
         const token = std.c.getenv("GITHUB_TOKEN").?;
         var ctx: ?*clib.struct_omg_context = null;
 
-        const err = clib.omg_setup_context(db_path, token, &ctx);
+        const err = clib.omg_setup_context(db_path, token, 10, &ctx);
         try testing.expect(clib.is_ok(err));
         break :init ctx;
     };

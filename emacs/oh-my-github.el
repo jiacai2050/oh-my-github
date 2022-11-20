@@ -48,6 +48,11 @@
   :group 'oh-my-github
   :type 'string)
 
+(defcustom oh-my-github-http-timeout 6
+  "Timeout used when make HTTP request"
+  :group 'oh-my-github
+  :type 'integer)
+
 (defcustom oh-my-github-commit-query-limit 50
   "Limit used when query latest commits (max 100)."
   :group 'oh-my-github
@@ -666,7 +671,8 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (if (string-empty-p oh-my-github-pat)
       (error "Personal access token not set.")
     (omg-dyn-setup (expand-file-name oh-my-github-db-file)
-                   oh-my-github-pat)))
+                   oh-my-github-pat
+                   oh-my-github-http-timeout)))
 
 ;;;###autoload
 (defun oh-my-github-teardown ()

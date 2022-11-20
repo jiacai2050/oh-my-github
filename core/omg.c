@@ -193,7 +193,7 @@ static db_t init_db(const char *root) {
 }
 
 omg_error omg_setup_context(const char *path, const char *github_token,
-                            omg_context *out) {
+                            int32_t timeout, omg_context *out) {
   curl_global_init(CURL_GLOBAL_ALL);
   CURL *api_curl = curl_easy_init();
   if (!api_curl) {
@@ -222,6 +222,7 @@ omg_error omg_setup_context(const char *path, const char *github_token,
     return (omg_error){.code = OMG_CODE_CURL, .message = "append3 header"};
   }
   curl_easy_setopt(api_curl, CURLOPT_HTTPHEADER, api_headers);
+  curl_easy_setopt(api_curl, CURLOPT_TIMEOUT, timeout);
   db_t db = init_db(path);
   if (!is_ok(db.err)) {
     return db.err;
@@ -240,6 +241,7 @@ omg_error omg_setup_context(const char *path, const char *github_token,
   curl_easy_setopt(trending_curl, CURLOPT_HTTPHEADER, trending_headers);
   curl_easy_setopt(trending_curl, CURLOPT_WRITEFUNCTION, mem_cb);
   curl_easy_setopt(trending_curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(trending_curl, CURLOPT_TIMEOUT, timeout);
 
   regex_t trending_re;
   if (pcre2_regcomp(&trending_re, RE, REG_DOTALL)) {
