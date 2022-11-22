@@ -25,7 +25,9 @@ EMACS_HEADERS = $(COMMON_HEADERS)
 # Why -fPIC https://stackoverflow.com/a/5311665/2163429
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix) -fPIC \
 	-std=gnu99 -Wall -Wextra -Werror -Wno-unused-parameter \
-	-Wpedantic -Wno-gnu -Wimplicit-fallthrough
+	-Wno-gnu -Wimplicit-fallthrough
+	# Issue all the warnings demanded by strict ISO C and ISO C++;
+	# -Wpedantic
 
 ifeq ($(OMG_TEST), 1)
 	CFLAGS += -D OMG_TEST
@@ -39,8 +41,10 @@ ifeq ($(uname_S), Darwin)
 	LDFLAGS += $(shell pkg-config --libs libcurl sqlite3) -pthread
 endif
 ifeq ($(uname_S), Linux)
-	LDFLAGS += $(shell pkg-config --variable=libdir libcurl)/libcurl.a
-	LDFLAGS += $(shell pkg-config --variable=libdir sqlite3)/libsqlite3.a
+	# TODO: Need to figure out how to static link curl/sqlite3 on Linux
+	# LDFLAGS += $(shell pkg-config --variable=libdir libcurl)/libcurl.a
+	# LDFLAGS += $(shell pkg-config --variable=libdir sqlite3)/libsqlite3.a
+	LDFLAGS += $(shell pkg-config --libs libcurl sqlite3) -pthread
 endif
 # static link those
 LDFLAGS += $(shell pkg-config --variable=libdir jansson)/libjansson.a
