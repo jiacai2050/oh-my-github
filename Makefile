@@ -1,3 +1,9 @@
+
+ifeq (, $(shell which zig))
+	CC ?= gcc
+else
+	CC ?= zig cc
+endif
 CORE_DIR = core
 EMACS_DIR = emacs
 CLI_DIR = cli
@@ -60,12 +66,6 @@ endif
 ifeq ($(ENABLE_ASAN), 1)
 	CFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
-endif
-
-ifeq (, $(shell which zig))
-	CC := gcc
-else
-	CC := zig cc
 endif
 
 all: $(CLI) emacs-dyn
