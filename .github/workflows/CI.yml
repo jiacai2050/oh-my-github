@@ -35,7 +35,7 @@ jobs:
           version: master
       - run: make install-deps
       - name: test compile
-        run: CC=${CC} make all
+        run: make all
       - name: Test
         if: matrix.os == 'ubuntu-latest'
         working-directory: tests
