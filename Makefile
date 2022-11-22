@@ -50,8 +50,11 @@ ifeq ($(uname_S), Darwin)
 	LDFLAGS += $(shell pkg-config --variable=libdir libpcre2-posix)/libpcre2-8.a
 endif
 ifeq ($(uname_S), Linux)
-	# TODO: Need to figure out how to static linking on Linux
-	LDFLAGS += $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
+	LDFLAGS += $(shell pkg-config --libs libcurl sqlite3) -pthread
+	# static link those
+	LDFLAGS += $(shell pkg-config --variable=libdir jansson)/libjansson.a
+	LDFLAGS += $(shell pkg-config --variable=libdir libpcre2-posix)/libpcre2-posix.a
+	LDFLAGS += $(shell pkg-config --variable=libdir libpcre2-posix)/libpcre2-8.a
 endif
 
 ifeq ($(OMG_TEST), 1)

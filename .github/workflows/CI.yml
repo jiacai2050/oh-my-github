@@ -3,24 +3,20 @@ name: CI
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - '**.zig'
-      - '**.c'
-      - '**.h'
-      - 'Makefile'
+    paths-ignore:
+      - '**.org'
+      - '**.md'
   push:
     branches:
       - master
     paths:
-      - '**.zig'
-      - '**.c'
-      - '**.h'
-      - 'Makefile'
+      - '**.org'
+      - '**.md'
 
 env:
   GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
   DB_PATH: /tmp/test.db
-  CC: gcc
+  CC: gcc-10
 
 jobs:
   test:
