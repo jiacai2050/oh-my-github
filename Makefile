@@ -1,3 +1,8 @@
+ifeq (, $(shell which zig))
+	CC ?= gcc
+else
+	CC ?= zig cc
+endif
 CORE_DIR = core
 EMACS_DIR = emacs
 CLI_DIR = cli
@@ -25,7 +30,9 @@ EMACS_HEADERS = $(COMMON_HEADERS)
 # Why -fPIC https://stackoverflow.com/a/5311665/2163429
 CFLAGS += -g $(shell pkg-config --cflags jansson libcurl sqlite3 libpcre2-posix) -fPIC \
 	-std=gnu99 -Wall -Wextra -Werror -Wno-unused-parameter \
-	-Wpedantic -Wno-gnu -Wimplicit-fallthrough
+	-Wno-gnu -Wimplicit-fallthrough
+	# Issue all the warnings demanded by strict ISO C and ISO C++;
+	# -Wpedantic
 
 ifeq ($(OMG_TEST), 1)
 	CFLAGS += -D OMG_TEST
@@ -34,7 +41,19 @@ ifeq ($(OMG_VERBOSE), 1)
 	CFLAGS += -D VERBOSE
 endif
 
-LDFLAGS += $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
+ifeq ($(uname_S), Darwin)
+	# curl/sqlite3 are pre-installed on macOS, so dynamic linking them
+	LDFLAGS += $(shell pkg-config --libs libcurl sqlite3) -pthread
+	# static link those
+	LDFLAGS += $(shell pkg-config --variable=libdir jansson)/libjansson.a
+	LDFLAGS += $(shell pkg-config --variable=libdir libpcre2-posix)/libpcre2-posix.a
+	LDFLAGS += $(shell pkg-config --variable=libdir libpcre2-posix)/libpcre2-8.a
+endif
+ifeq ($(uname_S), Linux)
+	# TODO: Need to figure out how to static linking on Linux
+	LDFLAGS += $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
+endif
+
 ifeq ($(OMG_TEST), 1)
 	LDFLAGS += -O1 -v
 else
@@ -45,12 +64,6 @@ endif
 ifeq ($(ENABLE_ASAN), 1)
 	CFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
-endif
-
-ifeq (, $(shell which zig))
-	CC := gcc
-else
-	CC := zig cc
 endif
 
 all: $(CLI) emacs-dyn

@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*'
 
+env:
+  CC: gcc
+
 jobs:
   publish:
     timeout-minutes: 10

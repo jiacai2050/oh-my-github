@@ -7,6 +7,7 @@ on:
       - '**.zig'
       - '**.c'
       - '**.h'
+      - 'Makefile'
   push:
     branches:
       - master
@@ -14,10 +15,12 @@ on:
       - '**.zig'
       - '**.c'
       - '**.h'
+      - 'Makefile'
 
 env:
   GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
   DB_PATH: /tmp/test.db
+  CC: gcc
 
 jobs:
   test:
@@ -34,7 +37,7 @@ jobs:
           version: master
       - run: make install-deps
       - name: test compile
-        run: make
+        run: make all
       - name: Test
         if: matrix.os == 'ubuntu-latest'
         working-directory: tests
