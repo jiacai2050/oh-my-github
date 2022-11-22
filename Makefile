@@ -34,7 +34,18 @@ ifeq ($(OMG_VERBOSE), 1)
 	CFLAGS += -D VERBOSE
 endif
 
-LDFLAGS += $(shell pkg-config --libs jansson libcurl sqlite3 libpcre2-posix) -pthread
+# curl/sqlite3 are pre-installed on macOS, so dynamic linking them
+ifeq ($(uname_S), Darwin)
+	LDFLAGS += $(shell pkg-config --libs libcurl sqlite3) -pthread
+endif
+ifeq ($(uname_S), Linux)
+	LDFLAGS += $(shell pkg-config --variable=libdir libcurl)/libcurl.a
+	LDFLAGS += $(shell pkg-config --variable=libdir sqlite3)/libsqlite3.a
+endif
+# static link those
+LDFLAGS += $(shell pkg-config --variable=libdir jansson)/libjansson.a
+LDFLAGS += $(shell pkg-config --variable=libdir libpcre2-posix)/libpcre2-posix.a
+LDFLAGS += $(shell pkg-config --variable=libdir libpcre2-posix)/libpcre2-8.a
 ifeq ($(OMG_TEST), 1)
 	LDFLAGS += -O1 -v
 else
