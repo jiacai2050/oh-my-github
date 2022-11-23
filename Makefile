@@ -97,7 +97,7 @@ ifeq ($(uname_S), Darwin)
 	brew install jansson pkg-config pcre2 sqlite
 endif
 ifeq ($(uname_S), Linux)
-	sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev xxd
+	apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev xxd
 endif
 
 test:

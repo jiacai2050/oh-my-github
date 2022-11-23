@@ -22,12 +22,16 @@ jobs:
   test:
     timeout-minutes: 10
     runs-on: ${{ matrix.os }}
+    container:
+      image: debian:latest
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
+      - run: |
+          apt update && apt install build-essential make xz-utils  -y
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: master
