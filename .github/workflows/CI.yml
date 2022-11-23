@@ -35,7 +35,11 @@ jobs:
       - uses: goto-bus-stop/setup-zig@v1
         with:
           version: master
-      - run: make install-deps
+      - run: |
+          make install-deps
+      - run: |
+          ${CC} --version
+          dpkg -l libjansson-dev libpcre2-dev libcurl4-openssl-dev libsqlite3-dev
       - name: test compile
         run: make all
       - name: Test
