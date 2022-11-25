@@ -6,12 +6,12 @@
 
 (defcustom omg-pull-open-in-browser t
   "If non-nil open PR link in browser via `browse-url-default-browser' after created."
-  :group 'omg-pull
+  :group 'omg
   :type 'boolean)
 
 (defcustom omg-pull-title-from-commit t
   "If non-nil, use last commit message as pull title"
-  :group 'omg-pull
+  :group 'omg
   :type 'boolean)
 
 (defvar-local omg-pull-target-repo ""

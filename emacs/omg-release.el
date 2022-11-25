@@ -6,12 +6,12 @@
 
 (defcustom omg-release-query-limit 50
   "Limit used when query latest releases (max 100)."
-  :group 'omg-release
+  :group 'omg
   :type 'integer)
 
 (defcustom omg-release-download-directory eww-download-directory
   "Directory where asset files will downloaded."
-  :group 'omg-release
+  :group 'omg
   :type '(choice directory function))
 
 (defun omg-release--query ()

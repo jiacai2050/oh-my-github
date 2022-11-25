@@ -6,7 +6,7 @@
 
 (defcustom omg-commit-query-limit 50
   "Limit used when query latest commits (max 100)."
-  :group 'oh-my-github
+  :group 'omg
   :type 'integer)
 
 (defun omg-commit--query ()

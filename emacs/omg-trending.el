@@ -8,7 +8,7 @@
 (defcustom omg-trending-default-spoken-language nil
   "2-letter spoken language code used when query trendings.
 For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.html"
-  :group 'omg-trending
+  :group 'omg
   :type '(choice (string :tag "Spoken Language")
                  (const :tag "Any" nil))
   :set (lambda (symbol value)
@@ -17,7 +17,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
 (defcustom omg-trending-default-language nil
   "Programming Language used when query trendings."
-  :group 'omg-trending
+  :group 'omg
   :type '(choice (string :tag "Programming Language")
                  (const :tag "Any" nil))
   :set (lambda (symbol value)
@@ -28,7 +28,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
 
 (defcustom omg-trending-default-range "daily"
   "Range used when query trendings."
-  :group 'omg-trending
+  :group 'omg
   :type 'string
   :options omg-trending--ranges
   :set (lambda (symbol value)
