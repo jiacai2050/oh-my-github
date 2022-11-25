@@ -30,57 +30,57 @@ There are mainly two user interfaces:
   - Query repositories
 * Emacs Interface
 ** Install
-1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][oh-my-github.el]]
+1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][omg.el]]
 2. Download required shared object, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
    - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
    - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencies]]
 3. Put =el= and =so= files under =load-path=
-4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =oh-my-github-pat=
-5. Initialize with =oh-my-github-setup=
+4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =omg-pat=
+5. Initialize with =omg-setup=
 
 Here is a =use-package= config demo:
 #+BEGIN_SRC emacs-lisp
-(use-package oh-my-github
-  :load-path "/path/to/oh-my-github/emacs"
+(use-package omg
+  :load-path "/path/to/omg/emacs"
   :config
-  (setq oh-my-github-pat (getenv "GITHUB_TOKEN"))
-  (oh-my-github-setup))
+  (setq omg-pat (getenv "GITHUB_TOKEN"))
+  (omg-setup))
 #+END_SRC
 
 After setup, you can
-- Check authentication with =oh-my-github-whoami=
-- Sync repositories/gists with =oh-my-github-sync=
-  - =~/.emacs.d/oh-my-github.db= is the default database file, users can customize it with =oh-my-github-db-file= variable.
+- Check authentication with =omg-whoami=
+- Sync repositories/gists with =omg-sync=
+  - =~/.emacs.d/omg.db= is the default database file, users can customize it with =omg-db-file= variable.
 
 ** Usage
 There are three major-modes for repositories:
-- =oh-my-github-repos-mode=
-- =oh-my-github-starred-repos-mode=
-- =oh-my-github-trending-repos-mode=
+- =omg-repos-mode=
+- =omg-starred-repos-mode=
+- =omg-trending-repos-mode=
 
 And there are three derived modes for repositories:
-- =oh-my-github-commits-mode=, commits of a repository
-- =oh-my-github-releases-mode=, releases of a repository
-- =oh-my-github-assets-mode=, asset files of a release
+- =omg-commits-mode=, commits of a repository
+- =omg-releases-mode=, releases of a repository
+- =omg-assets-mode=, asset files of a release
 
 There are two major-modes for gists:
-- =oh-my-github-gists-mode=
-- =oh-my-github-starred-gists-mode=
+- =omg-gists-mode=
+- =omg-starred-gists-mode=
 
 The figure below shows relations among those mode:
 
 [[file:assets/omg-modes.svg]]
 
 *** Useful commands
-- =oh-my-github-sync= Sync repositories/gists
+- =omg-sync= Sync repositories/gists
   - +Emacs maybe hang a while depending on how many repositories you have.+
-  - Since v0.4.0, synchronization happens in background thread, which will not hang Emacs any more. Users can check =*oh-my-github-log*= buffer for progress.
-- =oh-my-github-list-created-repositories=
-- =oh-my-github-list-starred-repositories=
-- =oh-my-github-list-trending-repositories=
-- =oh-my-github-list-created-gists=
-- =oh-my-github-list-starred-gists=
-- =oh-my-github-whoami=
+  - Since v0.4.0, synchronization happens in background thread, which will not hang Emacs any more. Users can check =*omg-log*= buffer for progress.
+- =omg-list-created-repositories=
+- =omg-list-starred-repositories=
+- =omg-list-trending-repositories=
+- =omg-list-created-gists=
+- =omg-list-starred-gists=
+- =omg-whoami=
 ** Screenshots
 *** Starred repositories mode
 [[file:assets/omg-stars.png]]

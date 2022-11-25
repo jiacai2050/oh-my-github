@@ -10,13 +10,13 @@
 
 ** New Features
 - Simplify repositories UI
-- Add new option =oh-my-github-http-timeout=
+- Add new option =omg-http-timeout=
 - Support create pull request [[https://github.com/jiacai2050/oh-my-github/pull/35][Pull Request #35]]
 ** Bugfix
 - [core] Sync fetch no data. [[https://github.com/jiacai2050/oh-my-github/commit/92cf16ea248d20d07c544e190760182d171f753c][92cf16e]]
 - [core] fix =Source and destination overlap in mempcpy= when concat SQL in query repos. [[https://github.com/jiacai2050/oh-my-github/pull/7][#7]]
 - [core] fix memleak when make HTTP request [[https://github.com/jiacai2050/oh-my-github/commit/4c4907ecd9e08f76fe56ea0f252e0dfd3b601ca4][4c4907e]]
-- [emacs] pass wrong pipe =fd= to background thread. [[https://github.com/jiacai2050/oh-my-github/commit/92cf16ea248d20d07c544e190760182d171f753c][92cf16e]]
+- [emacs] pass wrong pipe =fd= to background thread. [[https://github.com/jiacai2050/oh-my-github/setup commit/92cf16ea248d20d07c544e190760182d171f753c][92cf16e]]
 - [emacs] fix trending repo get full_name issue
 ** Internal Improvements
 - Add unittest, based on Zig
@@ -32,7 +32,7 @@
 - Trending API reuse =curl= instance
 * v0.5.0 (2022-04-28)
 ** New Features
-- Add oh-my-github-trending-repos-mode, browse https://github.com/trending in Emacs
+- Add omg-trending-repos-mode, browse https://github.com/trending in Emacs
   [[file:assets/omg-trendings.png]]
 
 * v0.4.0 (2022-04-25)
@@ -47,8 +47,8 @@
   [[file:assets/omg-modes.svg]]
 * v0.2.0 (2022-04-19)
 ** New Features
-- Add =oh-my-github-repo-list= to list owned repositories
-- Add =oh-my-github-whoami=, used for authentication check
+- Add =omg-repo-list= to list owned repositories
+- Add =omg-whoami=, used for authentication check
 #+begin_example
 +---------------+--------------------+
 |Created At     |2011-09-03T15:26:22Z|
@@ -86,7 +86,7 @@
 #+end_example
 ** Internal Improvements
 - Refactor directories
-- Reuse elisp code, derive =oh-my-github-stars-mode= based on =oh-my-github-repos-mode=
+- Reuse elisp code, derive =omg-stars-mode= based on =omg-repos-mode=
 
 * v0.1.0 (2022-04-17)
 Initial release

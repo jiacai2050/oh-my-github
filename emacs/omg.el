@@ -36,51 +36,51 @@
 (require 'omg-dyn)
 (require 'tabulated-list)
 (require 'seq)
-(require 'oh-my-github-core)
-(require 'oh-my-github-commit)
-(require 'oh-my-github-gist)
-(require 'oh-my-github-pull)
-(require 'oh-my-github-release)
-(require 'oh-my-github-repo)
-(require 'oh-my-github-trending)
-(require 'oh-my-github-whoami)
+(require 'omg-core)
+(require 'omg-commit)
+(require 'omg-gist)
+(require 'omg-pull)
+(require 'omg-release)
+(require 'omg-repo)
+(require 'omg-trending)
+(require 'omg-whoami)
 
 ;;  Public main API
 
 ;;;###autoload
-(defun oh-my-github-setup()
+(defun omg-setup()
   "Setup oh-my-github"
-  (if (string-empty-p oh-my-github-pat)
+  (if (string-empty-p omg-pat)
       (error "Personal access token not set.")
-    (omg-dyn-setup (expand-file-name oh-my-github-db-file)
-                   oh-my-github-pat
-                   oh-my-github-http-timeout)))
+    (omg-dyn-setup (expand-file-name omg-db-file)
+                   omg-pat
+                   omg-http-timeout)))
 
 ;;;###autoload
-(defun oh-my-github-teardown ()
-  "Teardown oh-my-github"
+(defun omg-teardown ()
+  "Teardown omg"
   (omg-dyn-teardown))
 
 ;;;###autoload
-(defun oh-my-github-sync ()
+(defun omg-sync ()
   "Sync GitHub repositories/gists(both created and starred) into local database."
   (interactive)
-  (let* ((buf (get-buffer-create oh-my-github--log-buf-name))
-         (sync-proc (make-pipe-process :name "oh-my-github-sync"
+  (let* ((buf (get-buffer-create omg--log-buf-name))
+         (sync-proc (make-pipe-process :name "omg-sync"
                                        :coding 'utf-8-emacs-unix
                                        :filter (lambda (proc output)
-                                                 (oh-my-github--log "oh-my-github-sync: %s\n" output)
-                                                 (when (string-match-p oh-my-github--pipe-eof output)
+                                                 (omg--log "omg-sync: %s\n" output)
+                                                 (when (string-match-p omg--pipe-eof output)
                                                    (delete-process proc)))
                                        :buffer buf)))
     (omg-dyn-sync sync-proc)
     (message (format "Start syncing repositories/gists in background. Check %s buffer for progress."
-                     oh-my-github--log-buf-name))))
+                     omg--log-buf-name))))
 
-(provide 'oh-my-github)
+(provide 'omg)
 
 ;; Local Variables:
 ;; coding: utf-8
 ;; End:
 
-;;; oh-my-github.el ends here
+;;; omg.el ends here

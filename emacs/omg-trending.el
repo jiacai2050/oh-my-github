@@ -3,38 +3,39 @@
 (require 'omg-dyn)
 (require 'tabulated-list)
 (require 'seq)
+(require 'omg-repo)
 
-(defcustom oh-my-github-trendings-default-spoken-language nil
+(defcustom omg-trending-default-spoken-language nil
   "2-letter spoken language code used when query trendings.
 For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.html"
-  :group 'oh-my-github
+  :group 'omg-trending
   :type '(choice (string :tag "Spoken Language")
                  (const :tag "Any" nil))
   :set (lambda (symbol value)
          (set-default symbol value)
-         (setq-default oh-my-github-trendings-query-language value)))
+         (setq omg-trending--query-spoken-language value)))
 
-(defcustom oh-my-github-trendings-default-language nil
+(defcustom omg-trending-default-language nil
   "Programming Language used when query trendings."
-  :group 'oh-my-github
+  :group 'omg-trending
   :type '(choice (string :tag "Programming Language")
                  (const :tag "Any" nil))
   :set (lambda (symbol value)
          (set-default symbol value)
-         (setq-default oh-my-github-trendings-query-language value)))
+         (setq-default omg-trending--query-language value)))
 
-(defconst oh-my-github--trendings-ranges '("daily" "weekly" "monthly"))
+(defconst omg-trending--ranges '("daily" "weekly" "monthly"))
 
-(defcustom oh-my-github-trendings-default-range "daily"
+(defcustom omg-trending-default-range "daily"
   "Range used when query trendings."
-  :group 'oh-my-github
+  :group 'omg-trending
   :type 'string
-  :options oh-my-github--trendings-ranges
+  :options omg-trending--ranges
   :set (lambda (symbol value)
          (set-default symbol value)
-         (setq-default oh-my-github-trendings-query-range value)))
+         (setq-default omg-trending--query-range value)))
 
-(defconst oh-my-github--trendings-spoken-languages  #s(hash-table
+(defconst omg-trending--spoken-languages  #s(hash-table
                                                        test equal
                                                        data ("Any" nil
                                                              "Chinese" "zh"
@@ -49,7 +50,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                                              "Ukrainian" "uk"))
   "Port from https://github.com/huchenme/github-trending-api/blob/master/src/spoken-languages.json")
 
-(defconst oh-my-github--trendings-languages  #s(hash-table
+(defconst omg-trending--languages  #s(hash-table
                                                 test equal
                                                 data ("Any" nil
                                                       "C" "c"
@@ -104,77 +105,77 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
                                                       "Zig" "zig"))
   "Port from https://github.com/huchenme/github-trending-api/blob/master/src/languages.json")
 
-(defvar-local oh-my-github-trendings-query-spoken-language oh-my-github-trendings-default-spoken-language
+(defvar omg-trending--query-spoken-language omg-trending-default-spoken-language
   "Spoken language used when query trendings repos.")
 
-(defvar-local oh-my-github-trendings-query-language oh-my-github-trendings-default-language
+(defvar omg-trending--query-language omg-trending-default-language
   "Language used when query trendings repos.")
 
-(defvar-local oh-my-github-trendings-query-range oh-my-github-trendings-default-range
+(defvar omg-trending--query-range omg-trending-default-range
   "Range used when query trendings repos.")
 
-(defun oh-my-github--query-trendings ()
-  (seq-into (omg-dyn-query-trendings oh-my-github-trendings-query-spoken-language
-                                     oh-my-github-trendings-query-language
-                                     oh-my-github-trendings-query-range)
+(defun omg-trending--query ()
+  (seq-into (omg-dyn-query-trendings omg-trending--query-spoken-language
+                                     omg-trending--query-language
+                                     omg-trending--query-range)
             'list))
 
-(defun oh-my-github--trendings-buf-name ()
-  (format "*oh-my-github [%s]-[%s]-[%s] trendings repos*"
-          (capitalize (or oh-my-github-trendings-query-spoken-language "any"))
-          (capitalize (or oh-my-github-trendings-query-language "any"))
-          (capitalize oh-my-github-trendings-query-range)))
+(defun omg-trending--get-buf-name ()
+  (format "*omg-trending [%s]-[%s]-[%s] trendings repos*"
+          (capitalize (or omg-trending--query-spoken-language "any"))
+          (capitalize (or omg-trending--query-language "any"))
+          (capitalize omg-trending--query-range)))
 
-(defun oh-my-github-trendings-revert (&optional revert)
-  (setq-local oh-my-github-trendings-query-spoken-language oh-my-github-trendings-default-spoken-language)
-  (setq-local oh-my-github-trendings-query-language oh-my-github-trendings-default-language)
-  (setq-local oh-my-github-trendings-query-range oh-my-github-trendings-default-range)
-  (rename-buffer (oh-my-github--trendings-buf-name) t))
+(defun omg-trending-revert (&optional revert)
+  (setq omg-trending--query-spoken-language omg-trending-default-spoken-language)
+  (setq omg-trending--query-language omg-trending-default-language)
+  (setq omg-trending--query-range omg-trending-default-range)
+  (rename-buffer (omg-trending--get-buf-name) t))
 
-(defun oh-my-github-trendings-query (spoken-language language range)
-  (interactive (list (completing-read  "Spoken language: " oh-my-github--trendings-spoken-languages)
-                     (completing-read  "Programming Language: " oh-my-github--trendings-languages)
-                     (completing-read "Range: " oh-my-github--trendings-ranges)))
-  (when (eq major-mode 'oh-my-github-trendings-mode)
-    (let ((spoken-language-code (gethash spoken-language oh-my-github--trendings-spoken-languages
+(defun omg-trending-query (spoken-language language range)
+  (interactive (list (completing-read  "Spoken language: " omg-trending--spoken-languages)
+                     (completing-read  "Programming Language: " omg-trending--languages)
+                     (completing-read "Range: " omg-trending--ranges)))
+  (when (eq major-mode 'omg-trending-mode)
+    (let ((spoken-language-code (gethash spoken-language omg-trending--spoken-languages
                                          spoken-language))
-          (programming-lang (gethash language oh-my-github--trendings-languages language)))
-      (setq-local oh-my-github-trendings-query-spoken-language spoken-language-code)
-      (setq-local oh-my-github-trendings-query-language programming-lang)
-      (setq-local oh-my-github-trendings-query-range range))
+          (programming-lang (gethash language omg-trending--languages language)))
+      (setq omg-trending-query-spoken-language spoken-language-code)
+      (setq omg-trending--query-language programming-lang)
+      (setq omg-trending--query-range range))
     (tabulated-list-print t)
-    (rename-buffer (oh-my-github--trendings-buf-name) t)))
+    (rename-buffer (omg-trending--get-buf-name) t)))
 
-(defvar oh-my-github-trendings-mode-map
+(defvar omg-trending-mode-map
   (let ((map (make-sparse-keymap)))
-    (set-keymap-parent map oh-my-github-repos-mode-map)
-    (define-key map (kbd "s") 'oh-my-github-trendings-query)
+    (set-keymap-parent map omg-repo-mode-map)
+    (define-key map (kbd "s") 'omg-trending-query)
     map)
-  "Local keymap for oh-my-github-stars mode buffers.")
+  "Local keymap for omg-trending-stars mode buffers.")
 
-(define-derived-mode oh-my-github-trendings-mode oh-my-github-repos-mode "oh-my-github trendings" "Display Trendings of GitHub repository"
+(define-derived-mode omg-trending-mode omg-trending-repos-mode "omg-trending trendings" "Display trending repository"
   (setq tabulated-list-format [("Repository" 25)
                                ("Recent Stars" 12 t)
                                ("Description" 5)]
         tabulated-list-padding 2
         tabulated-list-sort-key nil
-        tabulated-list-entries 'oh-my-github--query-trendings)
+        tabulated-list-entries 'omg-trending--query)
 
-  (add-hook 'tabulated-list-revert-hook 'oh-my-github-trendings-revert nil t)
+  (add-hook 'tabulated-list-revert-hook 'omg-trending-revert nil t)
   (tabulated-list-init-header))
 
 ;;;###autoload
-(defun oh-my-github-list-trending-repositories ()
+(defun omg-trending-list-trending-repositories ()
   (interactive)
-  (with-current-buffer (get-buffer-create (oh-my-github--trendings-buf-name))
-    (oh-my-github-trendings-mode)
+  (with-current-buffer (get-buffer-create (omg-trending--get-buf-name))
+    (omg-trending-mode)
     (tabulated-list-print t)
     (switch-to-buffer (current-buffer))))
 
-(provide 'oh-my-github-trending)
+(provide 'omg-trending)
 
 ;; Local Variables:
 ;; coding: utf-8
 ;; End:
 
-;;; oh-my-github-trending.el ends here
+;;; omg-trending.el ends here
