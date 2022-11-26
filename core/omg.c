@@ -10,13 +10,13 @@
 #include <string.h>
 
 const char *HEADER_ACCEPT = "Accept: application/vnd.github.v3.star+json";
-const char *HEADER_UA = "User-Agent: omg-client/0.1.0";
+const char *HEADER_UA = "User-Agent: omg-client/1.0.0";
 const char *API_ROOT = "https://api.github.com";
 const char *GET_METHOD = "GET";
 const char *DELETE_METHOD = "DELETE";
 const char *POST_METHOD = "POST";
 const char *PATCH_METHOD = "PATCH";
-// utils
+// when in test, fetch less data
 #ifdef OMG_TEST
 const size_t PER_PAGE = 10;
 #else

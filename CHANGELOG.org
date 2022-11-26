@@ -2,12 +2,13 @@
 #+DATE: 2022-04-23T10:20:54+0800
 #+AUTHOR: Jiacai Liu
 #+LANGUAGE: cn
-#+EMAIL: jiacai2050+org@gmail.com
+#+EMAIL: dev@liujiacai.net
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
 
 * master(unrelease)
 
+* v1.0.0 (2022-11-26)
 ** BREAKING CHANGES
 - All funtions/customs are prefix with =omg= instead of =oh-my-github= [[https://github.com/jiacai2050/oh-my-github/pull/47][#47]]
 ** New Features

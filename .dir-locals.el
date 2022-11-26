@@ -6,7 +6,7 @@
             (eval . (progn
                       (eglot-ensure)
                       (add-hook 'before-save-hook 'eglot-format nil t)))))
- (prog-mode . ((omg-pull-target-repo . "jiacai2050/oh-my-github")
-               (omg-pull-target-branch . "master")
-               (omg-pull-username  . "jiacai2050")
-               (omg-pull-draft . "false"))))
+ (nil . ((omg-pull-target-repo . "jiacai2050/oh-my-github")
+         (omg-pull-target-branch . "master")
+         (omg-pull-username  . "jiacai2050")
+         (omg-pull-draft . "false"))))
