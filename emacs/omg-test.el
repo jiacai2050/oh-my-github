@@ -26,6 +26,12 @@
              (attrs (file-attributes filepath)))
         (should (> (file-attribute-size attrs) 0))))))
 
+(ert-deftest test-whoami ()
+  (with-current-buffer (omg-whoami "jiacai2050")
+    (let ((info (buffer-string)))
+      (message "info is %s" info)
+      (should (string-match-p "jiacai2050" info)))))
+
 (ert-deftest test-sync ()
   (omg-sync)
   ;; wait sync
