@@ -1,0 +1,36 @@
+name: ELisp CI
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '**.md'
+      - '**.org'
+      - '.dir-locals.el'
+
+jobs:
+  lisp-test:
+    timeout-minutes: 10
+    runs-on: macos-latest
+    # permissions: write-all
+    strategy:
+      matrix:
+        emacs_version:
+          - 28.1
+    steps:
+      - uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          make install-deps
+      - name: Compile dyn
+        run: |
+          OMG_VERBOSE=1 OMG_TEST=1 make clean emacs-dyn
+      - name: Run test
+        working-directory: emacs
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+        run: |
+          make lisp-test

@@ -6,12 +6,12 @@
 
 (defcustom omg-pull-open-in-browser t
   "If non-nil open PR link in browser via `browse-url-default-browser' after created."
-  :group 'oh-my-github
+  :group 'omg
   :type 'boolean)
 
 (defcustom omg-pull-title-from-commit t
   "If non-nil, use last commit message as pull title"
-  :group 'oh-my-github
+  :group 'omg
   :type 'boolean)
 
 (defvar-local omg-pull-target-repo ""
@@ -27,9 +27,9 @@ This should be an existing branch on the current repository.")
 
 (defvar-local omg-pull-draft "false")
 
-(defvar omg--pull-buf-basename "*OMG Create Pull(%s)*")
-(defvar omg--pull-repo-root nil)
-(defconst omg--pull-header
+(defvar omg-pull--buf-basename "*omg-pull create(%s)*")
+(defvar omg-pull--repo-root nil)
+(defconst omg-pull--header
   "Edit, then submit with `\\[omg-pull-submit]', or cancel with `\\[omg-pull-cancel]'")
 
 (defun omg-pull-submit ()
@@ -47,7 +47,7 @@ This should be an existing branch on the current repository.")
          (draft (if (string-equal "true" (plist-get metadata :draft))
                     1
                   0))
-         (body (with-current-buffer (org-export-to-buffer 'md "*OMG pull body export*")
+         (body (with-current-buffer (org-export-to-buffer 'md "*OMG-PULL pull body export*")
                  (let ((body (buffer-substring-no-properties (point-min) (point-max))))
                    (kill-buffer)
                    body)))
@@ -65,17 +65,17 @@ This should be an existing branch on the current repository.")
   (when (y-or-n-p "Cancel this PR, are you sure?")
       (kill-buffer)))
 
-(defvar omg-pull-create-mode-map
+(defvar omg-pull-mode-map
   (let ((map (make-sparse-keymap)))
     (set-keymap-parent map org-mode-map)
     (define-key map (kbd "C-c C-c") 'omg-pull-submit)
     (define-key map (kbd "C-c C-k") 'omg-pull-cancel)
     map)
-  "Local keymap for omg-create-pull-mode buffers.")
+  "Local keymap for omg-pull-create-pull-mode buffers.")
 
-(define-derived-mode omg-pull-create-mode org-mode "omg create pull" "Create pull request for GitHub repository")
+(define-derived-mode omg-pull-mode org-mode "omg-pull" "Create pull request for GitHub repository")
 
-(defun omg-pull-get-template (root-dir)
+(defun omg-pull--get-template (root-dir)
   (let* ((template-file (concat root-dir "/.github/pull_request_template.md")))
     (when (file-exists-p template-file)
       (with-temp-buffer
@@ -87,7 +87,7 @@ This should be an existing branch on the current repository.")
   "Create PR based on current branch."
   (interactive)
   (if-let (root-dir (locate-dominating-file default-directory ".git"))
-      (setq-local omg--pull-repo-root root-dir)
+      (setq-local omg-pull--repo-root root-dir)
     (error "Not in a git repository"))
 
   (let* ((current-branch (string-trim (shell-command-to-string "git branch --show-current")))
@@ -105,21 +105,21 @@ This should be an existing branch on the current repository.")
                        "\n#+DRAFT: "
                        omg-pull-draft
                        "\n"))
-         (template (omg-pull-get-template omg--pull-repo-root)))
-    (with-current-buffer (get-buffer-create (format omg--pull-buf-basename omg--pull-repo-root))
+         (template (omg-pull--get-template omg-pull--repo-root)))
+    (with-current-buffer (get-buffer-create (format omg-pull--buf-basename omg-pull--repo-root))
       (beginning-of-buffer)
       (erase-buffer)
       (insert meta)
       (when template
         (insert (format "\n#+begin_export markdown\n%s\n#+end_export" template)))
-      (omg-pull-create-mode)
-      (setq header-line-format (substitute-command-keys omg--pull-header))
+      (omg-pull-mode)
+      (setq header-line-format (substitute-command-keys omg-pull--header))
       (switch-to-buffer (current-buffer)))))
 
-(provide 'oh-my-github-pull)
+(provide 'omg-pull)
 
 ;; Local Variables:
 ;; coding: utf-8
 ;; End:
 
-;;; oh-my-github-pull.el ends here
+;;; omg-pull.el ends here
