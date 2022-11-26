@@ -7,6 +7,7 @@
 #+STARTUP: content
 
 [[https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml][https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml/badge.svg]]
+[[https://github.com/jiacai2050/oh-my-github/actions/workflows/lisp-ci.yml][https://github.com/jiacai2050/oh-my-github/actions/workflows/lisp-ci.yml/badge.svg]]
 
 Oh My GitHub is a delightful, open source tool for managing your GitHub repositories/gists.
 

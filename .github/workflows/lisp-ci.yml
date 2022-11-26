@@ -1,0 +1,43 @@
+name: ELisp CI
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - '**.md'
+      - '**.org'
+      - '.dir-locals.el'
+
+jobs:
+  lisp-test:
+    timeout-minutes: 10
+    runs-on: macos-latest
+    # container:
+    #   image: debian:latest
+    strategy:
+      matrix:
+        emacs_version:
+          - 28.1
+          # - snapshot
+    steps:
+      # - run: |
+      #     apt update && apt install -y sudo curl
+      #     sh <(curl -L https://nixos.org/nix/install) --no-daemon
+      - uses: purcell/setup-emacs@master
+        # env:
+        #   USER: root
+        with:
+          version: ${{ matrix.emacs_version }}
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          make install-deps
+      - name: Compile dyn
+        run: |
+          OMG_TEST=1 make clean emacs-dyn
+      - name: Run test
+        working-directory: emacs
+        run: |
+          # ldd omg-dyn.so
+          # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib/x86_64-linux-gnu/
+          make lisp-test
