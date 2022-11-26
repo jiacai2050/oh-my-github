@@ -24,5 +24,14 @@
       (let* ((file (cdr url-file))
              (filepath (format "%s/%s" omg-download-directory file))
              (attrs (file-attributes filepath)))
-        (should (> (file-attribute-size attrs) 0))))
-    ))
+        (should (> (file-attribute-size attrs) 0))))))
+
+(ert-deftest test-sync ()
+  (omg-sync)
+  ;; wait sync
+  (sleep-for 20)
+
+  (should (> (length (omg-repo--query-created)) 0))
+  (should (> (length (omg-repo--query-starred)) 0))
+  (should (> (length (omg-gist--query-created)) 0))
+  (should (> (length (omg-gist--query-starred)) 0)))

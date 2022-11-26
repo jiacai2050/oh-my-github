@@ -15,11 +15,11 @@
 (defvar omg-repo--current-full-name nil
   "Current repository's full name, use for query commits/releases/issues.")
 
-(defun omg-repo--query-starred-repos ()
+(defun omg-repo--query-starred ()
   (seq-into (omg-dyn-query-starred-repos omg-repo--query-keyword omg-repo--query-language)
             'list))
 
-(defun omg-repo--query-created-repos ()
+(defun omg-repo--query-created ()
   (seq-into (omg-dyn-query-created-repos omg-repo--query-keyword omg-repo--query-language)
             'list))
 
@@ -109,7 +109,7 @@
   "Local keymap for omg-repo mode buffers.")
 
 (define-derived-mode omg-repo-mode tabulated-list-mode "omg-repo created repos" "Manage created repositories"
-  (omg-repo--init-repos-tabulated-list 'omg-repo--query-created-repos))
+  (omg-repo--init-repos-tabulated-list 'omg-repo--query-created))
 
 (defun omg-repo-unstar ()
   "Unstar repository at point."
@@ -129,7 +129,7 @@
   "Local keymap for omg-repo-starred-repos mode buffers.")
 
 (define-derived-mode omg-repo-starred-mode omg-repo-mode "omg-repo starred" "Manage starred repositories"
-  (omg-repo--init-repos-tabulated-list 'omg-repo--query-starred-repos))
+  (omg-repo--init-repos-tabulated-list 'omg-repo--query-starred))
 
 ;;;###autoload
 (defun omg-repo-list-created ()
