@@ -84,6 +84,22 @@ The figure below shows relations among those mode:
 - =omg-gist-list-starred=
 - =omg-trending-list=
 - =omg-whoami=
+- =omg-pull-create=, create a PR based on current project, it will open a org buffer, which contains following metadata to describe which repo/branch you want to merge into
+#+begin_example
+#+TITLE: refactor: rename all prefix to omg (#47)
+#+TARGET-REPO: jiacai2050/oh-my-github
+#+TARGET-BRANCH: master
+#+SOURCE-HEAD: jiacai2050:refactor
+#+DRAFT: false
+#+end_example
+Users can configure those metadata with this(in =.dir-locals.el=)
+  #+BEGIN_SRC emacs-lisp
+((prog-mode . ((omg-pull-target-repo . "jiacai2050/oh-my-github")
+               (omg-pull-target-branch . "master")
+               (omg-pull-username  . "jiacai2050")
+               (omg-pull-draft . "false"))))
+  #+END_SRC
+
 ** Screenshots
 *** Starred repositories
 [[file:assets/omg-stars.png]]
