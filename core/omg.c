@@ -16,6 +16,7 @@ const char *GET_METHOD = "GET";
 const char *DELETE_METHOD = "DELETE";
 const char *POST_METHOD = "POST";
 const char *PATCH_METHOD = "PATCH";
+const char *PUT_METHOD = "PUT";
 // when in test, fetch less data
 #ifdef OMG_TEST
 const size_t PER_PAGE = 10;
@@ -853,6 +854,40 @@ omg_error omg_unstar_repo(omg_context ctx, size_t repo_id) {
   char url[128];
   sprintf(url, "%s/user/starred/%s", API_ROOT, full_name);
   return omg_request(ctx, DELETE_METHOD, url, NULL, NULL);
+}
+
+static const char *iso8601_now() {
+  char *buf = malloc(32);
+  time_t timer;
+  struct tm *tm_info;
+
+  timer = time(NULL);
+  tm_info = gmtime(&timer);
+  // 2022-11-23T23:38:54Z
+  strftime(buf, 36, "%Y-%m-%dT%H:%M:%SZ", tm_info);
+  return buf;
+}
+
+omg_error omg_star_repo(omg_context ctx, const char *repo_full_name) {
+  char url[128];
+  sprintf(url, "%s/user/starred/%s", API_ROOT, repo_full_name);
+  omg_error err = omg_request(ctx, PUT_METHOD, url, NULL, NULL);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  memset(url, 0, sizeof(url));
+  sprintf(url, "%s/repos/%s", API_ROOT, repo_full_name);
+  json_auto_t *repo_resp = NULL;
+  err = omg_request(ctx, PUT_METHOD, url, NULL, &repo_resp);
+  if (!is_ok(err)) {
+    return err;
+  }
+
+  omg_auto_repo repo = repo_from_json(repo_resp);
+  omg_starred_repo omg_repo_list repo_lst =
+      (omg_repo_list){.repo_array = &repo, .length = 1};
+  return save_repos(ctx, repo_lst);
 }
 
 void omg_free_user(omg_user *user) {
