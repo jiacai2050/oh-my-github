@@ -153,7 +153,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
     map)
   "Local keymap for omg-trending-stars mode buffers.")
 
-(define-derived-mode omg-trending-mode omg-trending-repos-mode "omg-trending trendings" "Display trending repository"
+(define-derived-mode omg-trending-mode omg-repo-mode "omg-trending" "Display trending repository"
   (setq tabulated-list-format [("Repository" 25)
                                ("Recent Stars" 12 t)
                                ("Description" 5)]
@@ -165,7 +165,7 @@ For more 2-letter codes, see https://www.w3.org/International/O-charset-lang.htm
   (tabulated-list-init-header))
 
 ;;;###autoload
-(defun omg-trending-list-trending-repositories ()
+(defun omg-trending-list ()
   (interactive)
   (with-current-buffer (get-buffer-create (omg-trending--get-buf-name))
     (omg-trending-mode)

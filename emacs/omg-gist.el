@@ -5,7 +5,7 @@
 (require 'seq)
 
 (defun omg-gist--query-starred ()
-  (seq-into (omg-dyn-query-starred)
+  (seq-into (omg-dyn-query-starred-gists)
             'list))
 
 (defun omg-gist--query-created ()
@@ -36,6 +36,12 @@
   (when-let ((url (omg-gist--get-url)))
     (browse-url url)))
 
+(defun omg-gist-copy-gist-url ()
+  (interactive)
+  (when-let ((url (omg-gist--get-url)))
+    (kill-new url)
+    (message "Copied %s" url)))
+
 (defun omg-gist-copy-file-url ()
   (interactive)
   (when-let ((url (omg-gist--get-file-url)))
@@ -51,7 +57,7 @@
   (interactive)
   (when-let ((raw-url (omg-gist--get-file-url))
              (filename (omg-gist--get-file-name)))
-    (omg-gist--download filename raw-url)))
+    (omg--download-file filename raw-url)))
 
 (defun omg-gist-delete ()
   (interactive)
@@ -68,7 +74,8 @@
     (define-key map (kbd "b") 'omg-gist-browse)
     (define-key map (kbd "x") 'omg-gist-delete)
     (define-key map (kbd "d") 'omg-gist-download)
-    (define-key map (kbd "w") 'omg-gist-copy-file-url)
+    (define-key map (kbd "w") 'omg-gist-copy-gist-url)
+    (define-key map (kbd "f") 'omg-gist-copy-file-url)
     (define-key map (kbd "RET") 'omg-gist-browse-file)
     (define-key map (kbd "s-u") 'tabulated-list-revert)
     map)
@@ -89,9 +96,9 @@
   (when-let ((gist-id (omg-gist--get-id))
              (filename (omg-gist--get-file-name)))
     (when (yes-or-no-p (format "Are you really want to unstar %s?" filename))
-      (omg-gist-dyn-unstar-gist gist-id)
+      (omg-dyn-unstar-gist gist-id)
       (tabulated-list-delete-entry)
-      (message "Unstarred. %s %s" filename gist-id))))
+      (message "Unstarred %s(%s)" filename (omg-gist--get-url)))))
 
 (defvar omg-gist-starred-mode-map
   (let ((map (make-sparse-keymap)))

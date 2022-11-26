@@ -63,7 +63,7 @@
 
 ;;;###autoload
 (defun omg-sync ()
-  "Sync GitHub repositories/gists(both created and starred) into local database."
+  "Sync GitHub repositories/gists into local database."
   (interactive)
   (let* ((buf (get-buffer-create omg--log-buf-name))
          (sync-proc (make-pipe-process :name "omg-sync"
