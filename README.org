@@ -12,26 +12,28 @@
 Oh My GitHub is a delightful, open source tool for managing your GitHub repositories/gists.
 
 * Features
-- Support local storage(SQLite)
+- Support sync repos/gists to local storage(SQLite)
 - Rich search syntax
 - Fast. Oh My GitHub's core is built in [[https://gcc.gnu.org/onlinedocs/gcc/Standards.html][GNU99]] C (tested with [[Https://valgrind.org/][Valgrind]]/[[https://clang.llvm.org/docs/AddressSanitizer.html][ASAN]])
 
 There are mainly two user interfaces:
 - Emacs. Full-featured
   - Sync
-  - Query repositories
+  - Repositories
     - Unstar
     - Query latest commits
     - Query latest releases
     - Download release asset files
-  - Query created/starred gists
-
+  - Gists
+    - Download gist files
+  - Pull
+    - Create Pull Request
 - CLI, TBD
   - Sync
   - Query repositories
 * Emacs Interface
 ** Install
-1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/oh-my-github.el][omg.el]]
+1. Download [[https://github.com/jiacai2050/oh-my-github/blob/master/emacs/omg.el][omg.el]]
 2. Download required shared object, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
    - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
    - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencies]]
@@ -42,7 +44,7 @@ There are mainly two user interfaces:
 Here is a =use-package= config demo:
 #+BEGIN_SRC emacs-lisp
 (use-package omg
-  :load-path "/path/to/omg/emacs"
+  :load-path "/path/to/oh-my-github/emacs"
   :config
   (setq omg-pat (getenv "GITHUB_TOKEN"))
   (omg-setup))
@@ -55,18 +57,18 @@ After setup, you can
 
 ** Usage
 There are three major-modes for repositories:
-- =omg-repos-mode=
-- =omg-starred-repos-mode=
-- =omg-trending-repos-mode=
+- =omg-repo-mode=
+- =omg-repo-starred-mode=
+- =omg-trending-mode=
 
 And there are three derived modes for repositories:
-- =omg-commits-mode=, commits of a repository
-- =omg-releases-mode=, releases of a repository
-- =omg-assets-mode=, asset files of a release
+- =omg-commit-mode=, commits of a repository
+- =omg-release-mode=, releases of a repository
+- =omg-release-asset-mode=, asset files of a release
 
 There are two major-modes for gists:
-- =omg-gists-mode=
-- =omg-starred-gists-mode=
+- =omg-gist-mode=
+- =omg-gist-starred-mode=
 
 The figure below shows relations among those mode:
 
@@ -76,27 +78,28 @@ The figure below shows relations among those mode:
 - =omg-sync= Sync repositories/gists
   - +Emacs maybe hang a while depending on how many repositories you have.+
   - Since v0.4.0, synchronization happens in background thread, which will not hang Emacs any more. Users can check =*omg-log*= buffer for progress.
-- =omg-list-created-repositories=
-- =omg-list-starred-repositories=
-- =omg-list-trending-repositories=
-- =omg-list-created-gists=
-- =omg-list-starred-gists=
+- =omg-repo-list-created=
+- =omg-repo-list-starred=
+- =omg-gist-list-created=
+- =omg-gist-list-starred=
+- =omg-trending-list=
 - =omg-whoami=
 ** Screenshots
-*** Starred repositories mode
+*** Starred repositories
 [[file:assets/omg-stars.png]]
-*** Commits mode
+*** Commits
 [[file:assets/omg-commits.png]]
-*** Releases mode
+*** Releases
 [[file:assets/omg-releases.png]]
-*** Assets modes
+*** Assets
 [[file:assets/omg-assets.png]]
-*** Trendings modes
+*** Trendings
 [[file:assets/omg-trendings.png]]
 
 * Roadmap
 - [x] Trending
 - [x] Gists
+- [ ] Issue
 
 * Development
 - Ubuntu
