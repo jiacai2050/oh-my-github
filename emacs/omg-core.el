@@ -1,5 +1,7 @@
 ;;; -*- lexical-binding: t -*-
 
+(require 'eww)
+
 (defcustom omg-db-file (expand-file-name "omg.db" user-emacs-directory)
   "File where omg will store its database."
   :group 'omg

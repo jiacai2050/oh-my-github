@@ -5,15 +5,15 @@
 (require 'ert)
 (require 'omg)
 
-(setq omg-db-file "/tmp/omg-test.db"
-      omg-download-directory "/tmp"
+(setq omg-db-file (make-temp-file "omg-test.db")
+      omg-download-directory (make-temp-file "download" t)
       omg-pat (getenv "GITHUB_TOKEN"))
 
 (omg-setup)
 
 (ert-deftest test-download ()
-  (let ((urls '("https://httpbin.org/ip" . "ip.json"
-                "https://github.com/" . "github.html")))
+  (let ((urls '(("https://httpbin.org/ip" . "ip.json")
+                ("https://github.com/" . "github.html"))))
     (dolist (url-file urls)
       (omg--download-file (cdr url-file) (car url-file)))
 
@@ -22,6 +22,7 @@
 
     (dolist (url-file urls)
       (let* ((file (cdr url-file))
-             (attrs (file-attributes (concat "/tmp/" file))))
+             (filepath (format "%s/%s" omg-download-directory file))
+             (attrs (file-attributes filepath)))
         (should (> (file-attribute-size attrs) 0))))
     ))
