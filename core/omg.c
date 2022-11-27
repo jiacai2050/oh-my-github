@@ -879,15 +879,16 @@ omg_error omg_star_repo(omg_context ctx, const char *repo_full_name) {
   memset(url, 0, sizeof(url));
   sprintf(url, "%s/repos/%s", API_ROOT, repo_full_name);
   json_auto_t *repo_resp = NULL;
-  err = omg_request(ctx, PUT_METHOD, url, NULL, &repo_resp);
+  err = omg_request(ctx, GET_METHOD, url, NULL, &repo_resp);
   if (!is_ok(err)) {
     return err;
   }
 
   omg_auto_repo repo = repo_from_json(repo_resp);
-  omg_starred_repo omg_repo_list repo_lst =
-      (omg_repo_list){.repo_array = &repo, .length = 1};
-  return save_repos(ctx, repo_lst);
+  omg_auto_char now = (char *)iso8601_now();
+  omg_starred_repo starred_repo = {.starred_at = now, .repo = repo};
+  omg_starred_repo_list star_lst = {.star_array = &starred_repo, .length = 1};
+  return save_starred_repos(ctx, star_lst);
 }
 
 void omg_free_user(omg_user *user) {
