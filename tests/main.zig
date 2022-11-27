@@ -116,6 +116,10 @@ fn test_create_pull(ctx: ?*clib.struct_omg_context) anyerror!void {
     try testing.expectEqual(@as(i32, 330), resp.deletions);
 }
 
+fn test_star_repo(ctx: ?*clib.struct_omg_context) anyerror!void {
+    try check_error(clib.omg_star_repo(ctx, "jiacai2050/oh-my-github"));
+}
+
 pub fn main() anyerror!void {
     log.info(
         \\
@@ -142,4 +146,5 @@ pub fn main() anyerror!void {
     try test_created_repos(ctx);
     try test_created_gists(ctx);
     try test_create_pull(ctx);
+    try test_star_repo(ctx);
 }

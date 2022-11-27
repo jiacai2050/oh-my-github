@@ -80,6 +80,12 @@
     (tabulated-list-print t)
     (switch-to-buffer (current-buffer))))
 
+(defun omg-repo-star (full-name)
+  "Star repository at point."
+  (interactive (list (omg-repo--get-full-name)))
+  (omg-dyn-star-repo full-name)
+  (message "Starred %s" full-name))
+
 (defun omg-repo--revert (&optional revert)
   (setq omg-repo--query-keyword "")
   (setq omg-repo--query-language ""))
@@ -102,6 +108,7 @@
     (define-key map (kbd "b") 'omg-repo-browse)
     (define-key map (kbd "w") 'omg-repo-copy-url)
     (define-key map (kbd "s") 'omg-repo-query-repos)
+    (define-key map (kbd "S") 'omg-repo-star)
     (define-key map (kbd "r") 'omg-repo-query-releases)
     (define-key map (kbd "RET") 'omg-repo-query-commits)
     (define-key map (kbd "s-u") 'tabulated-list-revert)
@@ -111,15 +118,13 @@
 (define-derived-mode omg-repo-mode tabulated-list-mode "omg-repo created repos" "Manage created repositories"
   (omg-repo--init-repos-tabulated-list 'omg-repo--query-created))
 
-(defun omg-repo-unstar ()
+(defun omg-repo-unstar (full-name)
   "Unstar repository at point."
-  (interactive)
-  (if-let ((full-name (omg-repo--get-full-name)))
-      (when (yes-or-no-p (format "Are you really want to unstar %s?" full-name))
-        (omg-dyn-unstar-repo (string-to-number (tabulated-list-get-id)))
-        (tabulated-list-delete-entry)
-        (message "Unstarred %s" full-name))
-    (user-error "There is no repository at point")))
+  (interactive (list  (omg-repo--get-full-name)))
+  (when (yes-or-no-p (format "Are you really want to unstar %s?" full-name))
+    (omg-dyn-unstar-repo (string-to-number (tabulated-list-get-id)))
+    (tabulated-list-delete-entry)
+    (message "Unstarred %s" full-name)))
 
 (defvar omg-repo-starred-mode-map
   (let ((map (make-sparse-keymap)))

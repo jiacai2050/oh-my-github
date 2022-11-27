@@ -67,6 +67,7 @@ omg_error omg_query_created_repos(omg_context ctx, const char *keyword,
 
 // Starred repos
 typedef struct {
+  /* "2022-11-23T23:38:54Z" */
   char *starred_at;
   omg_repo repo;
 } omg_starred_repo;
@@ -89,6 +90,7 @@ omg_error omg_query_starred_repos(omg_context ctx, const char *keyword,
                                   const char *language,
                                   omg_starred_repo_list *out);
 omg_error omg_unstar_repo(omg_context ctx, size_t repo_id);
+omg_error omg_star_repo(omg_context ctx, const char *repo_full_name);
 
 // Users
 typedef struct omg_user {

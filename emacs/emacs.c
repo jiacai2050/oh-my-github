@@ -310,6 +310,20 @@ emacs_value omg_dyn_unstar_repo(emacs_env *env, ptrdiff_t nargs,
   return Qt;
 }
 
+emacs_value omg_dyn_star_repo(emacs_env *env, ptrdiff_t nargs,
+                              emacs_value *args, void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char repo_full_name = get_string(env, args[0]);
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_error err = omg_star_repo(ctx, repo_full_name);
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  return Qt;
+}
+
 emacs_value omg_dyn_delete_gist(emacs_env *env, ptrdiff_t nargs,
                                 emacs_value *args, void *data) {
   ENSURE_SETUP(env);
@@ -771,6 +785,9 @@ int emacs_module_init(runtime ert) {
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-unstar-repo"),
                env->make_function(env, 1, 1, omg_dyn_unstar_repo,
                                   "Unstar repository", NULL));
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-star-repo"),
+               env->make_function(env, 1, 1, omg_dyn_star_repo,
+                                  "Star repository", NULL));
 
   lisp_funcall(
       env, "fset", lisp_symbol(env, "omg-dyn-delete-gist"),
