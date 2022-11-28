@@ -1,0 +1,74 @@
+* Design principle
+People may wonder why oh-my-github since there are alternatives([[https://github.com/magit/forge][Forge]]) exist,
+here are my answer in this [[https://www.reddit.com/r/emacs/comments/z53mkb/comment/iy1lfly/?utm_source=share&utm_medium=web2x&context=3][Reddit thread]]:
+#+begin_quote
+oh-my-github's Emacs interface require nothing but Emacs(28+), so this maybe its
+one advantage(or disadvantage 🤔).
+
+All that said, oh-my-github is not only designed for Emacs, it's designed as a generic framework for working with GitHub API.
+
+oh-my-github's core is written in C, so other language may use it as a library via FFI, I plan to improve [[https://github.com/jiacai2050/oh-my-github/tree/master/cli][CLI interface]] in future.
+
+Hope this explain what oh-my-github's design principle is, and why it exists besides X/Y/Z.
+#+end_quote
+- [[https://en.liujiacai.net/2022/11/26/oh-my-github-1-0/][Oh My GitHub 1.0 is out! | KeepCoding]]
+
+* Install
+1. Download [[/emacs/omg.el][omg.el]]
+2. Download required shared object, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
+   - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
+   - or you can build it yourself with =make install-deps emacs-dyn=
+3. Put above =el= and =so= files under =load-path=
+4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =omg-pat=
+5. Initialize with =omg-setup=
+
+Here is a =use-package= config demo:
+#+BEGIN_SRC emacs-lisp
+(use-package omg
+  :load-path "/path/to/oh-my-github/emacs"
+  :config
+  (setq omg-pat "${YOUR-TOKEN}")
+  (omg-setup))
+#+END_SRC
+
+After setup, you can
+- Check authentication with =omg-whoami=
+- Sync repositories/gists with =omg-sync=
+  - =~/.emacs.d/omg.db= is the default database file, users can customize it with =omg-db-file= variable.
+
+* Usage
+There are three major-modes for repositories: =omg-repo-mode=, =omg-repo-starred-mode=, =omg-trending-mode=, and three derived modes:
+- =omg-commit-mode=, commits of a repository
+- =omg-release-mode=, releases of a repository
+- =omg-release-asset-mode=, asset files of a release
+
+As for gists, there are mainly two modes:
+- =omg-gist-mode=, manage your ownned gists
+- =omg-gist-starred-mode=,manage your starred gists
+
+The figure below shows relations among them:
+
+[[/assets/omg-modes.svg]]
+
+** Useful commands
+- =omg-sync= Sync repositories/gists
+  - Since v0.4.0, synchronization happens in background thread, which will not hang Emacs any more. Users can check =*omg-log*= buffer for progress.
+- =omg-repo-list-created=, list ownned repositories
+- =omg-repo-list-starred=, list starred repositories
+- =omg-gist-list-created=, list ownned gists
+- =omg-gist-list-starred=, list starred gists
+- =omg-trending-list=, list trending repositories
+- =omg-whoami=, fetch user information
+- =omg-pull-create=, create a pull request. See [[https://en.liujiacai.net/2022/11/26/oh-my-github-1-0/][this blog post]] to check details.
+
+* Screenshots
+*** Starred repositories
+[[/assets/omg-stars.png]]
+*** Commits
+[[/assets/omg-commits.png]]
+*** Releases
+[[/assets/omg-releases.png]]
+*** Assets
+[[/assets/omg-assets.png]]
+*** Trendings
+[[/assets/omg-trendings.png]]

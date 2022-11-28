@@ -44,7 +44,7 @@
     (goto-char (point-max))
     (insert
      (format
-      (concat "[" (propertize "%s" 'face 'omg-log-date-face) "]: %s\n")
+      (concat "[" (propertize "%s" 'face 'omg-log-date-face) "] %s\n")
       (format-time-string "%Y-%m-%d %H:%M:%S")
       (apply #'format fmt args)))))
 
@@ -58,7 +58,7 @@
       (let* ((proc (make-pipe-process :name (format "*omg-download %s*" raw-url)
                                       :coding 'utf-8-emacs-unix
                                       :filter (lambda (proc output)
-                                                (omg--log "omg-download: %s\n" output)
+                                                (omg--log "[omg-download] %s\n" output)
                                                 (when (string-match-p omg--pipe-eof output)
                                                   (delete-process proc))))))
         (when (omg-dyn-download proc raw-url dest)

@@ -69,7 +69,7 @@
          (sync-proc (make-pipe-process :name "omg-sync"
                                        :coding 'utf-8-emacs-unix
                                        :filter (lambda (proc output)
-                                                 (omg--log "omg-sync: %s\n" output)
+                                                 (omg--log "[omg-sync] %s\n" output)
                                                  (when (string-match-p omg--pipe-eof output)
                                                    (delete-process proc)))
                                        :buffer buf)))

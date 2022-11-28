@@ -1,0 +1,43 @@
+* Usage
+#+begin_src bash
+$ omg-cli -h
+USAGE:
+  omg-cli [options]
+
+OPTIONS:
+  -f, --db-file <DB-FILE>    Database path [required]
+  -s, --sync                 Sync GitHub repositories into local database
+  -t, --trends  <lang:range> Query GitHub trendings
+  -h, --help                 Print help information
+
+#+end_src
+** GitHub trends
+#+begin_example
+$ omg-cli -t any:any
+Recent stars|Repository                    |Description
+88          |taosdata/TDengine             |TDengine is an open source, high-performance, cloud native time-series database optimized for Intern
+182         |AUTOMATIC1111/stable-diff     |Stable Diffusion web UI
+121         |microsoft/torchscale          |Transformers at any scale
+51          |Dreamacro/clash               |A rule-based tunnel in Go.
+63          |MirrorX-Desktop/MirrorX       |Secure, Fast and Light remote desktop &amp; file manager tool powered by Tauri and egui.
+535         |jlevy/the-art-of-command-     |Master the command line, in one page
+71          |davidfowl/TodoApi             |Todo application with ASP.NET Core Blazor WASM, Minimal APIs and Authentication
+139         |stashapp/stash                |An organizer for your porn, written in Go
+47          |iluwatar/java-design-patt     |Design patterns implemented in Java
+34          |gulihua10010/playPiano        |Java弹奏钢琴乐曲
+27          |LSPosed/MagiskOnWSALocal      |Integrate Magisk root and Google Apps into WSA (Windows Subsystem for Android)
+45          |Developer-Y/cs-video-cour     |List of Computer Science courses with video lectures.
+26          |coolsnowwolf/lede             |Lean's LEDE source
+350         |codecrafters-io/build-you     |Master programming by recreating your favorite technologies from scratch.
+25          |limoruirui/misaka             |开源的一些乱七八糟的东西
+98          |supabase/supabase             |The open source Firebase alternative. Follow to stay updated about our public Beta.
+85          |youshandefeiyang/IPTV         |肥羊的IPTV直播源搜集仓库
+41          |DIYgod/RSSHub                 |<g-emoji class="g-emoji" alias="cake" fallback-src="https://github.githubassets.com/images/icons/emo
+55          |mlfoundations/open_clip       |An open source implementation of CLIP.
+176         |runfinch/finch                |The Finch CLI an open source client for container development
+121         |TomSchimansky/CustomTkint     |A modern and customizable python UI-library based on Tkinter
+50          |ChrisTitusTech/winutil        |Chris Titus Tech's Windows Utility - Install Programs, Tweaks, Fixes, and Updates
+220         |microsoft/Web-Dev-For-Beg     |24 Lessons, 12 Weeks, Get Started as a Web Developer
+54          |faif/python-patterns          |A collection of design patterns/idioms in Python
+40          |mindsdb/mindsdb               |In-Database Machine Learning
+#+end_example
