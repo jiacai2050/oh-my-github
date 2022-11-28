@@ -5,6 +5,7 @@
 #+EMAIL: jiacai2050+org@gmail.com
 #+OPTIONS: toc:nil num:nil
 #+STARTUP: content
+#+OPTIONS: broken-links:t
 
 [[https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml][https://github.com/jiacai2050/oh-my-github/actions/workflows/CI.yml/badge.svg]]
 [[https://github.com/jiacai2050/oh-my-github/actions/workflows/lisp-ci.yml][https://github.com/jiacai2050/oh-my-github/actions/workflows/lisp-ci.yml/badge.svg]]
@@ -37,7 +38,7 @@ There are mainly two user interfaces:
 2. Download required shared object, and rename it to =omg-dyn.so= or =dll= suffix if you are on Windows
    - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
    - or you can build it yourself with =make emacs-dyn=, be sure to install [[#Development][required dependencies]]
-3. Put =el= and =so= files under =load-path=
+3. Put above =el= and =so= files under =load-path=
 4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =omg-pat=
 5. Initialize with =omg-setup=
 
@@ -46,7 +47,7 @@ Here is a =use-package= config demo:
 (use-package omg
   :load-path "/path/to/oh-my-github/emacs"
   :config
-  (setq omg-pat (getenv "GITHUB_TOKEN"))
+  (setq omg-pat "${YOUR-TOKEN}")
   (omg-setup))
 #+END_SRC
 
@@ -56,35 +57,29 @@ After setup, you can
   - =~/.emacs.d/omg.db= is the default database file, users can customize it with =omg-db-file= variable.
 
 ** Usage
-There are three major-modes for repositories:
-- =omg-repo-mode=
-- =omg-repo-starred-mode=
-- =omg-trending-mode=
-
-And there are three derived modes for repositories:
+There are three major-modes for repositories: =omg-repo-mode=, =omg-repo-starred-mode=, =omg-trending-mode=, and three derived modes:
 - =omg-commit-mode=, commits of a repository
 - =omg-release-mode=, releases of a repository
 - =omg-release-asset-mode=, asset files of a release
 
-There are two major-modes for gists:
-- =omg-gist-mode=
-- =omg-gist-starred-mode=
+As for gists, there are mainly two modes:
+- =omg-gist-mode=, manage your ownned gists
+- =omg-gist-starred-mode=,manage your starred gists
 
-The figure below shows relations among those mode:
+The figure below shows relations among them:
 
 [[file:assets/omg-modes.svg]]
 
 *** Useful commands
 - =omg-sync= Sync repositories/gists
-  - +Emacs maybe hang a while depending on how many repositories you have.+
   - Since v0.4.0, synchronization happens in background thread, which will not hang Emacs any more. Users can check =*omg-log*= buffer for progress.
-- =omg-repo-list-created=
-- =omg-repo-list-starred=
-- =omg-gist-list-created=
-- =omg-gist-list-starred=
-- =omg-trending-list=
-- =omg-whoami=
-- =omg-pull-create=, See [[https://en.liujiacai.net/2022/11/26/oh-my-github-1-0/][this blog post]] to check how to utilize it
+- =omg-repo-list-created=, list ownned repositories
+- =omg-repo-list-starred=, list starred repositories
+- =omg-gist-list-created=, list ownned gists
+- =omg-gist-list-starred=, list starred gists
+- =omg-trending-list=, list trending repositories
+- =omg-whoami=, fetch user information
+- =omg-pull-create=, create a pull request. See [[https://en.liujiacai.net/2022/11/26/oh-my-github-1-0/][this blog post]] to check details.
 
 ** Screenshots
 *** Starred repositories
