@@ -14,7 +14,12 @@
   :group 'omg
   :type 'boolean)
 
-(defvar-local omg-pull-target-repo ""
+(defcustom omg-pull-guess-target-repo-from-remote "origin"
+  "Guess target branch from remote when `omg-pull-target-repo' is `nil'"
+  :group 'omg
+  :type 'string)
+
+(defvar-local omg-pull-target-repo nil
   "The full name of the repository you want the changes pulled into.
 Such as `octocat/Hello-World'")
 
@@ -82,6 +87,17 @@ This should be an existing branch on the current repository.")
         (insert-file-contents template-file)
         (buffer-string)))))
 
+(defun omg-pull--guess-target-repo (url)
+  (if (string-prefix-p "http" url)
+      ;; https://github.com/jiacai2050/oh-my-github.git
+      (thread-last url
+                   (string-remove-prefix "https://github.com/")
+                   (string-remove-suffix ".git"))
+    ;; git@github.com:jiacai2050/oh-my-github.git
+    (thread-last url
+                 (string-remove-prefix "git@github.com:")
+                 (string-remove-suffix ".git"))))
+
 ;;;###autoload
 (defun omg-pull-create ()
   "Create PR based on current branch."
@@ -95,7 +111,10 @@ This should be an existing branch on the current repository.")
                        (when omg-pull-title-from-commit
                          (string-trim (shell-command-to-string "git show-branch --no-name HEAD")))
                        "\n#+TARGET-REPO: "
-                       omg-pull-target-repo
+                       (or omg-pull-target-repo
+                           (when-let ((url (string-trim (shell-command-to-string
+                                                         (format "git remote get-url %s" omg-pull-guess-target-repo-from-remote)))))
+                             (omg-pull--guess-target-repo url)))
                        "\n#+TARGET-BRANCH: "
                        omg-pull-target-branch
                        "\n#+SOURCE-HEAD: "

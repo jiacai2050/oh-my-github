@@ -41,3 +41,7 @@
   (should (> (length (omg-repo--query-starred)) 0))
   (should (> (length (omg-gist--query-created)) 0))
   (should (> (length (omg-gist--query-starred)) 0)))
+
+(ert-deftest test-pull-guess-target-repo ()
+  (should (string-equal "jiacai2050/oh-my-github" (omg-pull--guess-target-repo "git@github.com:jiacai2050/oh-my-github.git")))
+  (should (string-equal "jiacai2050/oh-my-github" (omg-pull--guess-target-repo "https://github.com/jiacai2050/oh-my-github.git"))))
