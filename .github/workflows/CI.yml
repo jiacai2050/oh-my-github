@@ -36,8 +36,10 @@ jobs:
         with:
           version: master
       - run: make install-deps
-      - name: test compile
+      - name: gcc compile
         run: make all
+      - name: zig compile
+        run: zig build
       - name: Test
         if: matrix.os == 'ubuntu-latest'
         working-directory: tests

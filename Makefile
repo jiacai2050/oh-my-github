@@ -102,4 +102,5 @@ test:
 
 clean:
 	rm -f $(CLI) $(SO_FILE) $(EMACS_OBJECTS) $(CLI_OBJECTS)
+	rm -rf zig-cache zig-out
 	cd tests && rm -rf zig-cache zig-out
