@@ -1,0 +1,14 @@
+.{
+    .name = "loc",
+    .version = "0.1.0",
+    .dependencies = .{
+        .simargs = .{
+            .url = "https://github.com/jiacai2050/simargs/archive/8257229.tar.gz",
+            .hash = "122047a7e755efbeaaabd76d79a3a05f8b76ffc4d0bd1c25237a52d95bea0c3bc141",
+        },
+        .@"table-helper" = .{
+            .url = "https://github.com/jiacai2050/table-helper/archive/a886dca.tar.gz",
+            .hash = "12209010104a85472a854ed4de2a11c0623903c64f1cf3cfac3827c5c76abad11b79",
+        },
+    },
+}
