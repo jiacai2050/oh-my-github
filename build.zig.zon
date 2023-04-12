@@ -1,10 +1,10 @@
 .{
-    .name = "loc",
+    .name = "omg-cli",
     .version = "0.1.0",
     .dependencies = .{
         .simargs = .{
-            .url = "https://github.com/jiacai2050/simargs/archive/8257229.tar.gz",
-            .hash = "122047a7e755efbeaaabd76d79a3a05f8b76ffc4d0bd1c25237a52d95bea0c3bc141",
+            .url = "https://github.com/jiacai2050/simargs/archive/b7d6a1a.tar.gz",
+            .hash = "1220a1ab51da698549402fb7bda57fdd614e59369ff6b48a463210c120920cf05465",
         },
         .@"table-helper" = .{
             .url = "https://github.com/jiacai2050/table-helper/archive/a886dca.tar.gz",
