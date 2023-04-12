@@ -1,8 +1,0 @@
-USAGE:
-  omg-cli [options]
-
-OPTIONS:
-  -f, --db-file <DB-FILE>    Database path [required]
-  -s, --sync                 Sync GitHub repositories into local database
-  -t, --trends  <lang:range> Query GitHub trendings
-  -h, --help                 Print help information

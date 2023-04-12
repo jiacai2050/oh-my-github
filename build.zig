@@ -13,7 +13,6 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
-    core_lib.addIncludePath("core");
     const create_table_header_step = b.addSystemCommand(&[_][]const u8{ "make", "core/create_table.h" });
     core_lib.step.dependOn(&create_table_header_step.step);
     var cflags = std.ArrayList([]const u8).init(b.allocator);
@@ -40,13 +39,17 @@ pub fn build(b: *std.Build) !void {
     core_lib.linkSystemLibrary("jansson");
     core_lib.linkSystemLibrary("libpcre2-posix");
     core_lib.linkLibC();
-    core_lib.install();
 
-    buildEmacsDyn(b, core_lib, target, optimize, cflags.items);
-    buildCli(b, core_lib, target, optimize, cflags.items);
+    buildEmacsModule(b, core_lib, target, optimize, cflags.items);
+    buildCliTool(
+        b,
+        core_lib,
+        target,
+        optimize,
+    );
 }
 
-fn buildEmacsDyn(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, optimize: OptimizeMode, cflags: []const []const u8) void {
+fn buildEmacsModule(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, optimize: OptimizeMode, cflags: []const []const u8) void {
     const lib = b.addSharedLibrary(.{
         .name = "omg-dyn",
         .target = target,
@@ -59,16 +62,26 @@ fn buildEmacsDyn(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, opt
     lib.install();
 }
 
-fn buildCli(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, optimize: OptimizeMode, cflags: []const []const u8) void {
-    const omg_cli_exe = b.addExecutable(.{
+fn buildCliTool(
+    b: *std.Build,
+    core_lib: *CompileStep,
+    target: CrossTarget,
+    optimize: OptimizeMode,
+) void {
+    const exe = b.addExecutable(.{
         .name = "omg-cli",
+        .root_source_file = .{ .path = "cli/main.zig" },
         .target = target,
         .optimize = optimize,
     });
 
-    omg_cli_exe.step.dependOn(&b.addSystemCommand(&[_][]const u8{ "make", "cli/help.h" }).step);
-    omg_cli_exe.linkLibrary(core_lib);
-    omg_cli_exe.linkLibC();
-    omg_cli_exe.addCSourceFile("cli/cli.c", cflags);
-    omg_cli_exe.install();
+    const simargs_dep = b.dependency("simargs", .{});
+    const table_dep = b.dependency("table-helper", .{});
+    exe.addModule("simargs", simargs_dep.module("simargs"));
+    exe.addModule("table-helper", table_dep.module("table-helper"));
+
+    exe.addIncludePath("core");
+    exe.linkLibrary(core_lib);
+    exe.linkLibC();
+    exe.install();
 }

@@ -1,0 +1,14 @@
+.{
+    .name = "omg-cli",
+    .version = "0.1.0",
+    .dependencies = .{
+        .simargs = .{
+            .url = "https://github.com/jiacai2050/simargs/archive/b7d6a1a.tar.gz",
+            .hash = "1220a1ab51da698549402fb7bda57fdd614e59369ff6b48a463210c120920cf05465",
+        },
+        .@"table-helper" = .{
+            .url = "https://github.com/jiacai2050/table-helper/archive/a886dca.tar.gz",
+            .hash = "12209010104a85472a854ed4de2a11c0623903c64f1cf3cfac3827c5c76abad11b79",
+        },
+    },
+}
