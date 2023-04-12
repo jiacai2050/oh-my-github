@@ -41,7 +41,12 @@ pub fn build(b: *std.Build) !void {
     core_lib.linkLibC();
 
     buildEmacsModule(b, core_lib, target, optimize, cflags.items);
-    buildCliTool(b, core_lib, target, optimize, cflags.items);
+    buildCliTool(
+        b,
+        core_lib,
+        target,
+        optimize,
+    );
 }
 
 fn buildEmacsModule(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, optimize: OptimizeMode, cflags: []const []const u8) void {
@@ -57,8 +62,12 @@ fn buildEmacsModule(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, 
     lib.install();
 }
 
-fn buildCliTool(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, optimize: OptimizeMode, cflags: []const []const u8) void {
-    _ = cflags;
+fn buildCliTool(
+    b: *std.Build,
+    core_lib: *CompileStep,
+    target: CrossTarget,
+    optimize: OptimizeMode,
+) void {
     const exe = b.addExecutable(.{
         .name = "omg-cli",
         .root_source_file = .{ .path = "cli/main.zig" },

@@ -5,7 +5,6 @@ else
 endif
 CORE_DIR = core
 EMACS_DIR = emacs
-CLI_DIR = cli
 
 ifeq ($(OS),Windows_NT)
 	uname_S := Windows
@@ -19,11 +18,9 @@ ifeq ($(uname_S), Windows)
 	SO_FILE = $(EMACS_DIR)/omg-dyn.dll
 endif
 
-CLI = omg-cli
-COMMON_HEADERS = $(CORE_DIR)/omg.h $(CORE_DIR)/create_table.h
+CLI = ./zig-out/bin/omg-cli
 
-CLI_OBJECTS = $(CORE_DIR)/omg.o $(CLI_DIR)/cli.o
-CLI_HEADERS = $(COMMON_HEADERS) $(CLI_DIR)/help.h
+COMMON_HEADERS = $(CORE_DIR)/omg.h $(CORE_DIR)/create_table.h
 EMACS_OBJECTS = $(CORE_DIR)/omg.o $(EMACS_DIR)/emacs.o
 EMACS_HEADERS = $(COMMON_HEADERS)
 
@@ -68,17 +65,14 @@ endif
 
 all: $(CLI) emacs-dyn
 
+$(CLI):
+	zig build -Doptimize=ReleaseSafe
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(CORE_DIR)/create_table.h: $(CORE_DIR)/create_table.sql
 	xxd -i $< | tac | sed '3s/$$/, 0x00/' | tac > $@
-
-$(CLI_DIR)/help.h: $(CLI_DIR)/help.txt
-	xxd -i $< > $@
-
-$(CLI): $(CLI_OBJECTS) $(CLI_HEADERS)
-	$(CC) $(CLI_OBJECTS) $(LDFLAGS) -o $(CLI)
 
 memcheck:
 	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./$(CLI) -f /tmp/test.db
