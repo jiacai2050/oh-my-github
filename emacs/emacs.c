@@ -117,6 +117,13 @@ static char *human_size(int size) {
   return buf;
 }
 
+static void write_pipe(int pipe, const char *msg, size_t msglen) {
+  /* https://pubs.opengroup.org/onlinepubs/7908799/xsh/write.html */
+  if (write(pipe, msg, msglen) == -1) {
+    fprintf(stderr, "write pipe failed");
+  }
+}
+
 static emacs_value omg_dyn_emacs_button(emacs_env *env, const char *label,
                                         const char *help_echo) {
   return lisp_funcall(env, "cons", lisp_string(env, label),
@@ -357,43 +364,43 @@ static void *omg_dyn_sync_background(void *ptr) {
   free(ptr);
 
   char *msg = "Start syncing, wait a few seconds...";
-  write(pipe, msg, strlen(msg));
+  write_pipe(pipe, msg, strlen(msg));
 
   omg_error err = omg_sync_starred_repos(ctx);
   if (!is_ok(err)) {
-    write(pipe, err.message, strlen(err.message));
+    write_pipe(pipe, err.message, strlen(err.message));
   } else {
     msg = "Starred repositories sync finished!";
-    write(pipe, msg, strlen(msg));
+    write_pipe(pipe, msg, strlen(msg));
   }
 
   err = omg_sync_created_repos(ctx);
   if (!is_ok(err)) {
-    write(pipe, err.message, strlen(err.message));
+    write_pipe(pipe, err.message, strlen(err.message));
   } else {
     msg = "Created repositories sync finished!";
-    write(pipe, msg, strlen(msg));
+    write_pipe(pipe, msg, strlen(msg));
   }
 
   err = omg_sync_starred_gists(ctx);
   if (!is_ok(err)) {
-    write(pipe, err.message, strlen(err.message));
+    write_pipe(pipe, err.message, strlen(err.message));
   } else {
     msg = "Starred gists sync finished!";
-    write(pipe, msg, strlen(msg));
+    write_pipe(pipe, msg, strlen(msg));
   }
 
   err = omg_sync_created_gists(ctx);
   if (!is_ok(err)) {
-    write(pipe, err.message, strlen(err.message));
+    write_pipe(pipe, err.message, strlen(err.message));
   } else {
     msg = "Created gists sync finished!";
-    write(pipe, msg, strlen(msg));
+    write_pipe(pipe, msg, strlen(msg));
   }
 
   msg = "All sync finished!";
-  write(pipe, msg, strlen(msg));
-  write(pipe, PIPE_EOF, strlen(PIPE_EOF));
+  write_pipe(pipe, msg, strlen(msg));
+  write_pipe(pipe, PIPE_EOF, strlen(PIPE_EOF));
 
   IS_SYNC = 0;
   close(pipe);
@@ -622,20 +629,20 @@ static void *omg_dyn_download_background(void *ptr) {
 
   char msg[256];
   sprintf(msg, "Start download %s to %s", url, filename);
-  write(pipe, msg, strlen(msg));
+  write_pipe(pipe, msg, strlen(msg));
 
   omg_error err = omg_download(ctx, url, filename);
   if (!is_ok(err)) {
     char msg[256];
     sprintf(msg, "Download %s failed, msg:%s", url, err.message);
-    write(pipe, msg, strlen(msg));
+    write_pipe(pipe, msg, strlen(msg));
   } else {
     char msg[256];
     sprintf(msg, "Download %s success, location:%s", url, filename);
-    write(pipe, msg, strlen(msg));
+    write_pipe(pipe, msg, strlen(msg));
   }
 
-  write(pipe, PIPE_EOF, strlen(PIPE_EOF));
+  write_pipe(pipe, PIPE_EOF, strlen(PIPE_EOF));
   close(pipe);
   return NULL;
 }
