@@ -50,6 +50,16 @@
 ;;;###autoload
 (defun omg-setup()
   "Setup oh-my-github"
+  (unless omg-username
+    (when-let ((user (omg--execute "config" "github.user")))
+      (setq omg-username user)))
+  (unless omg-pat
+    (when-let ((auths (auth-source-search :host "api.github.com"
+                                          :user (format "%s^omg" omg-username)))
+               (first-auth (car auths))
+               (token (funcall (plist-get first-auth :secret))))
+      (setq omg-pat token)))
+
   (if (string-empty-p omg-pat)
       (error "Personal access token not set.")
     (omg-dyn-setup (expand-file-name omg-db-file)

@@ -3,6 +3,7 @@
 (require 'org)
 (require 'ox-md)
 (require 'omg-dyn)
+(require 'vc)
 
 (defcustom omg-pull-open-in-browser t
   "If non-nil open PR link in browser via `browse-url-default-browser' after created."
@@ -27,7 +28,7 @@ Such as `octocat/Hello-World'")
   "The name of the branch you want the changes pulled into.
 This should be an existing branch on the current repository.")
 
-(defvar-local omg-pull-username nil
+(defvar-local omg-pull-username omg-username
   "Your GitHub username")
 
 (defvar-local omg-pull-draft "false")
@@ -102,18 +103,17 @@ This should be an existing branch on the current repository.")
 (defun omg-pull-create ()
   "Create PR based on current branch."
   (interactive)
-  (if-let (root-dir (locate-dominating-file default-directory ".git"))
+  (if-let (root-dir (vc-root-dir))
       (setq-local omg-pull--repo-root root-dir)
     (error "Not in a git repository"))
 
-  (let* ((current-branch (string-trim (shell-command-to-string "git branch --show-current")))
+  (let* ((current-branch (omg--execute "branch" "--show-current"))
          (meta (concat "#+TITLE: "
                        (when omg-pull-title-from-commit
-                         (string-trim (shell-command-to-string "git show-branch --no-name HEAD")))
+                          (omg--execute "show-branch" "--no-name" "HEAD"))
                        "\n#+TARGET-REPO: "
                        (or omg-pull-target-repo
-                           (when-let ((url (string-trim (shell-command-to-string
-                                                         (format "git remote get-url %s" omg-pull-guess-target-repo-from-remote)))))
+                           (when-let ((url (omg--execute "remote" "get-url" omg-pull-guess-target-repo-from-remote)))
                              (omg-pull--guess-target-repo url)))
                        "\n#+TARGET-BRANCH: "
                        omg-pull-target-branch
@@ -133,6 +133,7 @@ This should be an existing branch on the current repository.")
         (insert (format "\n#+begin_export markdown\n%s\n#+end_export" template)))
       (omg-pull-mode)
       (setq header-line-format (substitute-command-keys omg-pull--header))
+      (beginning-of-buffer)
       (switch-to-buffer (current-buffer)))))
 
 (provide 'omg-pull)
