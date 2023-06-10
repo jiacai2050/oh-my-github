@@ -1,6 +1,7 @@
 ;;; -*- lexical-binding: t -*-
 
 (require 'eww)
+(require 'vc-git)
 
 (defcustom omg-db-file (expand-file-name "omg.db" user-emacs-directory)
   "File where omg will store its database."
@@ -9,6 +10,11 @@
 
 (defcustom omg-pat nil
   "GitHub personal access token"
+  :group 'omg
+  :type 'string)
+
+(defcustom omg-username nil
+  "GitHub username"
   :group 'omg
   :type 'string)
 
@@ -65,6 +71,13 @@
           (message (format "Download %s in background.\nCheck %s buffer for progress."
                            raw-url
                            omg--log-buf-name)))))))
+
+(defun omg--execute (command &rest args)
+  (with-temp-buffer
+    (apply 'vc-git--call (current-buffer)
+           command args)
+    (string-trim
+     (buffer-substring-no-properties (point-min) (point-max)))))
 
 (provide 'omg-core)
 
