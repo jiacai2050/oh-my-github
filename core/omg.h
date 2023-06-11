@@ -11,12 +11,14 @@
 #define OMG_CODE_INTERNAL 4
 #define OMG_CODE_GITHUB 5
 
+#define ERROR_TEXT_LENGTH 160
+
 void omg_free_char(char **buf);
 #define omg_auto_char char *__attribute__((cleanup(omg_free_char)))
 
 typedef struct omg_error {
   int code;
-  const char *message;
+  char message[ERROR_TEXT_LENGTH];
 } omg_error;
 
 void print_error(omg_error err);

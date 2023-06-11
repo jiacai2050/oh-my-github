@@ -9,3 +9,6 @@ omg-cli
 .DS_Store
 zig-cache
 zig-out
+.env
+.project
+share.org

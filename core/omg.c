@@ -142,7 +142,23 @@ void print_error(omg_error err) {
 
 bool is_ok(omg_error err) { return err.code == OMG_CODE_OK; }
 
-static const omg_error NO_ERROR = {.code = OMG_CODE_OK, .message = NULL};
+static const omg_error NO_ERROR = {.code = OMG_CODE_OK, .message = {}};
+
+static omg_error new_error(int code, const char *msg) {
+  size_t msg_size = strlen(msg);
+  if (msg_size == 0) {
+    return NO_ERROR;
+  }
+
+  omg_error err = {.code = code, .message = {}};
+  if (msg_size > ERROR_TEXT_LENGTH - 1) {
+    memcpy(err.message, msg, ERROR_TEXT_LENGTH - 1);
+  } else {
+    memcpy(err.message, msg, msg_size);
+  }
+
+  return err;
+}
 
 static bool empty_string(const char *s) {
   if (s) {
@@ -178,7 +194,7 @@ static db_t init_db(const char *root) {
   if (ret) {
     const char *msg = sqlite3_errmsg(db);
     sqlite3_close(db);
-    return (db_t){.err = {.code = OMG_CODE_DB, .message = msg}};
+    return (db_t){.err = new_error(OMG_CODE_DB, msg)};
   }
 
   char *err_msg = NULL;
@@ -279,8 +295,7 @@ static omg_error omg_request(omg_context ctx, const char *method,
 
   CURLcode res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
-    return (omg_error){.code = OMG_CODE_CURL,
-                       .message = curl_easy_strerror(res)};
+    return new_error(OMG_CODE_CURL, curl_easy_strerror(res));
   }
 
   long response_code;
@@ -289,23 +304,16 @@ static omg_error omg_request(omg_context ctx, const char *method,
   case 204: // no_content
   case 304: // not_modified
     return NO_ERROR;
-  case 404: // not_found
-    return (omg_error){.code = OMG_CODE_CURL,
-                       .message =
-                           "404. Resource Not Found or Not owned by you"};
   default:
-    if (response_code >= 400) {
-      fprintf(stderr, "visit %s failed with %zu\n", url, response_code);
-      return (omg_error){.code = OMG_CODE_CURL,
-                         .message = "Bad request, check stderr for details."};
-    }
+    fprintf(stderr, "visit %s failed with %zu\n", url, response_code);
+    return new_error(OMG_CODE_CURL, chunk.memory);
   }
 
   if (out) {
     json_error_t error;
     json_t *resp = json_loads(chunk.memory, JSON_COMPACT, &error);
     if (!resp) {
-      return (omg_error){.code = OMG_CODE_JSON, .message = error.text};
+      return new_error(OMG_CODE_JSON, error.text);
     }
     *out = resp;
   }
@@ -323,7 +331,7 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
   // multiple threads
   auto_curl *curl = curl_easy_init();
   if (!curl) {
-    return (omg_error){.code = OMG_CODE_CURL, .message = "curl init"};
+    return new_error(OMG_CODE_JSON, "curl init");
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, url);
@@ -342,8 +350,7 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
   CURLcode res = curl_easy_perform(curl);
   fclose(file);
   if (res != CURLE_OK) {
-    return (omg_error){.code = OMG_CODE_CURL,
-                       .message = curl_easy_strerror(res)};
+    return new_error(OMG_CODE_CURL, curl_easy_strerror(res));
   }
 
   long response_code;
@@ -445,7 +452,7 @@ static omg_error save_repos(omg_context ctx, omg_repo_list repo_lst) {
   auto_sqlite3_stmt stmt = NULL;
   int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
   for (size_t i = 0; i < repo_lst.length; i++) {
     omg_repo repo = repo_lst.repo_array[i];
@@ -506,7 +513,7 @@ static omg_error save_created_repos(omg_context ctx, omg_repo_list repo_lst) {
       "insert or ignore into omg_created_repo(repo_id) values (?1)";
   int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   for (size_t i = 0; i < repo_lst.length; i++) {
@@ -599,7 +606,7 @@ static omg_error prepare_query_repos_sql(omg_context ctx, bool is_star,
 
   int rc = sqlite3_prepare_v2(ctx->db, sql, strlen(sql), out, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   return NO_ERROR;
@@ -645,7 +652,7 @@ omg_error omg_query_created_repos(omg_context ctx, const char *keyword,
     repo_arr[row++] = repo_from_db(stmt);
   }
   if (rc != SQLITE_DONE) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   *out = (omg_repo_list){.repo_array = repo_arr, .length = rows_count};
@@ -751,7 +758,7 @@ omg_error omg_query_starred_repos(omg_context ctx, const char *keyword,
   }
 
   if (rc != SQLITE_DONE) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   *out_lst =
@@ -779,7 +786,7 @@ static omg_error save_starred_repos(omg_context ctx,
       "do update set starred_at = ?1";
   int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   for (size_t i = 0; i < star_lst.length; i++) {
@@ -829,26 +836,26 @@ omg_error omg_unstar_repo(omg_context ctx, size_t repo_id) {
   auto_sqlite3_stmt stmt = NULL;
   int rc = sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
   sqlite3_bind_int64(stmt, 1, repo_id);
   if (sqlite3_step(stmt) != SQLITE_ROW) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
   omg_auto_char full_name = strdup_when_not_null(sqlite3_column_text(stmt, 0));
   printf("delete repo %s\n", full_name);
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   sql = "delete from omg_starred_repo where repo_id = ?";
   if (sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL)) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
   sqlite3_bind_int64(stmt, 1, repo_id);
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   char url[128];
@@ -1182,8 +1189,7 @@ omg_error omg_query_trending(omg_context ctx, const char *spoken_lang,
 
   CURLcode res = curl_easy_perform(curl);
   if (res != CURLE_OK) {
-    return (omg_error){.code = OMG_CODE_CURL,
-                       .message = curl_easy_strerror(res)};
+    return new_error(OMG_CODE_CURL, curl_easy_strerror(res));
   }
 
   long response_code;
@@ -1267,7 +1273,7 @@ static omg_error omg_save_gists_common(omg_context ctx, omg_gist_list lst) {
   auto_sqlite3_stmt stmt = NULL;
   int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
   for (size_t i = 0; i < lst.length; i++) {
     omg_gist gist = lst.gist_array[i];
@@ -1303,7 +1309,7 @@ static omg_error omg_save_gists(omg_context ctx, bool is_star,
   }
   int rc = sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   for (size_t i = 0; i < lst.length; i++) {
@@ -1379,7 +1385,7 @@ omg_error omg_query_gists_common(omg_context ctx, bool is_star,
   auto_sqlite3_stmt stmt = NULL;
   int rc = sqlite3_prepare_v2(ctx->db, sql, strlen(sql), &stmt, NULL);
   if (rc) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   size_t rows_count = 0;
@@ -1407,7 +1413,7 @@ omg_error omg_query_gists_common(omg_context ctx, bool is_star,
     gist_arr[row++] = gist;
   }
   if (rc != SQLITE_DONE) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   *out = (omg_gist_list){.gist_array = gist_arr, .length = rows_count};
@@ -1426,11 +1432,12 @@ omg_error omg_delete_gist(omg_context ctx, char *gist_id) {
   const char *sql = "delete from omg_created_gist where gist_id = ?";
   auto_sqlite3_stmt stmt = NULL;
   if (sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL)) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
   sqlite3_bind_text(stmt, 1, gist_id, -1, SQLITE_STATIC);
+
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   char url[128];
@@ -1442,11 +1449,12 @@ omg_error omg_unstar_gist(omg_context ctx, char *gist_id) {
   const char *sql = "delete from omg_starred_gist where gist_id = ?";
   auto_sqlite3_stmt stmt = NULL;
   if (sqlite3_prepare_v2(ctx->db, sql, -1, &stmt, NULL)) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
+
   sqlite3_bind_text(stmt, 1, gist_id, -1, SQLITE_STATIC);
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-    return (omg_error){.code = OMG_CODE_DB, .message = sqlite3_errmsg(ctx->db)};
+    return new_error(OMG_CODE_DB, sqlite3_errmsg(ctx->db));
   }
 
   char url[128];
