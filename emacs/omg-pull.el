@@ -103,7 +103,7 @@ This should be an existing branch on the current repository.")
 (defun omg-pull-create ()
   "Create PR based on current branch."
   (interactive)
-  (if-let (root-dir (vc-root-dir))
+  (if-let (root-dir (vc-git-responsible-p default-directory))
       (setq-local omg-pull--repo-root root-dir)
     (error "Not in a git repository"))
 

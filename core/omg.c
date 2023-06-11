@@ -305,8 +305,10 @@ static omg_error omg_request(omg_context ctx, const char *method,
   case 304: // not_modified
     return NO_ERROR;
   default:
-    fprintf(stderr, "visit %s failed with %zu\n", url, response_code);
-    return new_error(OMG_CODE_CURL, chunk.memory);
+    if (response_code >= 400) {
+      fprintf(stderr, "visit %s failed with %zu\n", url, response_code);
+      return new_error(OMG_CODE_CURL, chunk.memory);
+    }
   }
 
   if (out) {
