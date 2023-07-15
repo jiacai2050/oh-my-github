@@ -11,7 +11,7 @@
 #define OMG_CODE_INTERNAL 4
 #define OMG_CODE_GITHUB 5
 
-#define ERROR_TEXT_LENGTH 160
+#define ERROR_TEXT_LENGTH 256
 
 void omg_free_char(char **buf);
 #define omg_auto_char char *__attribute__((cleanup(omg_free_char)))
