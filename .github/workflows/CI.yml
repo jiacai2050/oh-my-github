@@ -44,6 +44,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           zig build -Dcpu=baseline --verbose
-          TEST_BINARY=./zig-out/bin/core-test
+          TEST_BINARY=./zig-out/bin/test-core
           valgrind --leak-check=full --tool=memcheck \
           --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY}

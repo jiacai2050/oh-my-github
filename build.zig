@@ -104,7 +104,7 @@ fn buildTest(
     optimize: OptimizeMode,
 ) void {
     const exe = b.addExecutable(.{
-        .name = name ++ "test",
+        .name = "test-" ++ name,
         .root_source_file = .{ .path = "tests/" ++ name ++ ".zig" },
         .target = target,
         .optimize = optimize,
