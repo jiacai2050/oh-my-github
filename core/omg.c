@@ -54,17 +54,17 @@ static void free_response(response *resp) {
   }
 }
 
-/* static void free_curl_slist(struct curl_slist **lst) { */
-/*   if (*lst) { */
-/* #ifdef VERBOSE */
-/*     printf("free curl list, body is %s\n", (*lst)->data); */
-/* #endif */
-/*     curl_slist_free_all(*lst); */
-/*   } */
-/* } */
+// static void free_curl_slist(struct curl_slist **lst) {
+//   if (*lst) {
+// #ifdef VERBOSE
+//     printf("free curl list, body is %s\n", (*lst)->data);
+// #endif
+//     curl_slist_free_all(*lst);
+//   }
+// }
 
-/* #define auto_curl_slist \ */
-/*   struct curl_slist __attribute__((cleanup(free_curl_slist))) */
+// #define auto_curl_slist \
+//   struct curl_slist __attribute__((cleanup(free_curl_slist)))
 
 static void free_curl_handler(CURL **curl) {
   if (*curl) {
@@ -1535,10 +1535,19 @@ omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
   if (!is_ok(err)) {
     return err;
   }
-  json_t *discussion = json_object_get(
-      json_object_get(json_object_get(response, "data"), "createDiscussion"),
-      "discussion");
+  json_t *create =
+      json_object_get(json_object_get(response, "data"), "createDiscussion");
+  if (json_is_null(create)) {
+    json_t *errors = json_object_get(response, "errors");
+    if (json_is_null(errors)) {
+      return (omg_error){.code = OMG_CODE_CURL, .message = "Unknown error!"};
+    }
 
+    return new_error(OMG_CODE_CURL, json_string_value(json_object_get(
+                                        json_array_get(errors, 0), "message")));
+  }
+
+  json_t *discussion = json_object_get(create, "discussion");
   *out = (omg_discussion){.id = dup_json_string(discussion, "id"),
                           .url = dup_json_string(discussion, "url")};
 
@@ -1547,7 +1556,12 @@ omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
 
 void omg_free_discussion(omg_discussion *discussion) {
   if (discussion != NULL) {
-    free(discussion->url);
-    free(discussion->id);
+    if (discussion->url) {
+      free(discussion->url);
+    }
+
+    if (discussion->id) {
+      free(discussion->id);
+    }
   }
 }
