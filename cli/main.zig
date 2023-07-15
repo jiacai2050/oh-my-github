@@ -23,15 +23,6 @@ pub fn main() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    const token = std.os.getenv("GITHUB_TOKEN");
-    if (null == token) {
-        return error.TokenNotSet;
-    }
-    const db_path = std.os.getenv("OMG_DB_PATH");
-    if (null == db_path) {
-        return error.DBPathNotSet;
-    }
-
     var opt = try simargs.parse(allocator, struct {
         mode: SubCommand,
         timeout: i32 = 10,
@@ -49,7 +40,16 @@ pub fn main() !void {
             .timeout = "HTTP timeout(seconds)",
             .help = "Prints help message",
         };
-    }, "[args]");
+    }, "[args]", null);
+
+    const token = std.os.getenv("GITHUB_TOKEN");
+    if (null == token) {
+        return error.TokenNotSet;
+    }
+    const db_path = std.os.getenv("OMG_DB_PATH");
+    if (null == db_path) {
+        return error.DBPathNotSet;
+    }
 
     const c_token = try allocator.dupeZ(u8, token.?);
     const c_db_path = try allocator.dupeZ(u8, db_path.?);
@@ -102,9 +102,9 @@ fn processTrend(allocator: std.mem.Allocator, ctx: c.omg_context, args: [][]cons
         const repo_name = std.mem.span(lst.repo_array[i].full_name);
         const description = std.mem.span(lst.repo_array[i].description);
         try table_data.append([_][]const u8{
-            repo_name[0..std.math.min(30, repo_name.len)],
+            repo_name[0..@min(30, repo_name.len)],
             numToString(allocator, lst.repo_array[i].stargazers_count),
-            description[0..std.math.min(100, description.len)],
+            description[0..@min(100, description.len)],
         });
         i += 1;
     }

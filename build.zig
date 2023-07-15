@@ -47,6 +47,16 @@ pub fn build(b: *std.Build) !void {
         target,
         optimize,
     );
+
+    inline for (.{ "core", "discussion" }) |name| {
+        buildTest(
+            b,
+            name,
+            core_lib,
+            target,
+            optimize,
+        );
+    }
 }
 
 fn buildEmacsModule(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, optimize: OptimizeMode, cflags: []const []const u8) void {
@@ -59,7 +69,7 @@ fn buildEmacsModule(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, 
     lib.addIncludePath("emacs");
     lib.linkLibrary(core_lib);
     lib.addCSourceFile("emacs/emacs.c", cflags);
-    lib.install();
+    b.installArtifact(lib);
 }
 
 fn buildCliTool(
@@ -83,5 +93,32 @@ fn buildCliTool(
     exe.addIncludePath("core");
     exe.linkLibrary(core_lib);
     exe.linkLibC();
-    exe.install();
+    b.installArtifact(exe);
+}
+
+fn buildTest(
+    b: *std.Build,
+    comptime name: []const u8,
+    core_lib: *CompileStep,
+    target: CrossTarget,
+    optimize: OptimizeMode,
+) void {
+    const exe = b.addExecutable(.{
+        .name = name ++ "test",
+        .root_source_file = .{ .path = "tests/" ++ name ++ ".zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    exe.addIncludePath("core");
+    exe.linkLibrary(core_lib);
+    exe.linkLibC();
+    b.installArtifact(exe);
+
+    const run_cmd = b.addRunArtifact(exe);
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    const run_step = b.step("test-" ++ name, "Run the test " ++ name);
+    run_step.dependOn(&run_cmd.step);
 }

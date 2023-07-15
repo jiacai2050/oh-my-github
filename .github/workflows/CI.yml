@@ -39,12 +39,11 @@ jobs:
       - name: gcc compile
         run: make all
       - name: zig compile
-        run: zig build
+        run: zig build -Dquick=true
       - name: Test
         if: matrix.os == 'ubuntu-latest'
-        working-directory: tests
         run: |
           zig build -Dcpu=baseline --verbose
-          TEST_BINARY=./zig-out/bin/omg-test
+          TEST_BINARY=./zig-out/bin/core-test
           valgrind --leak-check=full --tool=memcheck \
           --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY}

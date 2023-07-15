@@ -1,18 +1,13 @@
 const clib = @cImport({
     @cInclude("omg.h");
 });
+const util = @import("util.zig");
 const std = @import("std");
 const testing = std.testing;
 const fs = std.fs;
 const log = std.log;
 const mem = std.mem;
-
-fn check_error(err: clib.omg_error) anyerror!void {
-    if (!clib.is_ok(err)) {
-        log.err("omg_error code:{d}, msg:{s}", .{ err.code, err.message });
-        return error.TestUnexpectedError;
-    }
-}
+const check_error = util.check_error;
 
 fn test_download(ctx: ?*clib.struct_omg_context) anyerror!void {
     const dst_file = "/tmp/dst.json";
@@ -27,22 +22,16 @@ fn test_download(ctx: ?*clib.struct_omg_context) anyerror!void {
     log.debug("file read, len:{d}, body:{s}", .{ bytes_read, buf[0..bytes_read] });
     const Payload = struct { url: []const u8 };
 
-    var stream = std.json.TokenStream.init(buf[0..bytes_read]);
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    const payload = try std.json.parse(
-        Payload,
-        &stream,
-        .{
-            .allocator = allocator,
-            .ignore_unknown_fields = true,
-        },
-    );
+    const payload = try std.json.parseFromSlice(Payload, allocator, buf[0..bytes_read], .{
+        .ignore_unknown_fields = true,
+    });
+    const actual_url = payload.value.url;
 
-    log.info("payload url {s}", .{payload.url});
-    try testing.expect(mem.eql(u8, payload.url, url[0..]));
-    try testing.expectEqualStrings(url[0..], payload.url);
+    log.info("payload url {s}", .{actual_url});
+    try testing.expectEqualStrings(url[0..], actual_url);
 }
 
 fn test_created_repos(ctx: ?*clib.struct_omg_context) anyerror!void {
@@ -131,14 +120,7 @@ pub fn main() anyerror!void {
     , .{});
     log.info("Run oh-my-github test...", .{});
     const db_path = std.c.getenv("DB_PATH").?;
-    var ctx = init: {
-        const token = std.c.getenv("GITHUB_TOKEN").?;
-        var ctx: ?*clib.struct_omg_context = null;
-
-        const err = clib.omg_setup_context(db_path, token, 10, &ctx);
-        try testing.expect(clib.is_ok(err));
-        break :init ctx;
-    };
+    var ctx = try util.init_ctx();
     defer clib.omg_free_context(&ctx);
     defer fs.deleteFileAbsolute(db_path[0..std.mem.len(db_path)]) catch {};
 

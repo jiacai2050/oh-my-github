@@ -91,10 +91,6 @@ ifeq ($(uname_S), Linux)
 	sudo apt install -y libcurl4-openssl-dev pkg-config libjansson-dev libsqlite3-dev valgrind libpcre2-dev xxd
 endif
 
-test:
-	cd tests && zig build run
-
 clean:
 	rm -f $(CLI) $(SO_FILE) $(EMACS_OBJECTS) $(CLI_OBJECTS)
 	rm -rf zig-cache zig-out
-	cd tests && rm -rf zig-cache zig-out

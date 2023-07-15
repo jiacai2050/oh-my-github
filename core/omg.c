@@ -12,6 +12,7 @@
 const char *HEADER_ACCEPT = "Accept: application/vnd.github.v3.star+json";
 const char *HEADER_UA = "User-Agent: omg-client/1.0.0";
 const char *API_ROOT = "https://api.github.com";
+const char *GRAPHQL_ROOT = "https://api.github.com/graphql";
 const char *GET_METHOD = "GET";
 const char *DELETE_METHOD = "DELETE";
 const char *POST_METHOD = "POST";
@@ -1509,4 +1510,51 @@ omg_error omg_toggle_pull(omg_context ctx, const char *full_name,
   }
 
   return omg_request(ctx, PATCH_METHOD, url, request, NULL);
+}
+
+omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
+                                 const char *category_id, const char *title,
+                                 const char *body, omg_discussion *out) {
+
+  char mutation[4096];
+  sprintf(
+      mutation,
+      "mutation { createDiscussion(input: { "
+      "repositoryId: \"%s\", categoryId: \"%s\", title: \"%s\", body: \"%s\""
+      " }) {"
+      "discussion {id title url}"
+      "}} ",
+      repo_id, category_id, title, body);
+
+  json_auto_t *request = json_object();
+  json_object_set_new(request, "query", json_string(mutation));
+
+  //   {
+  //   "data": {
+  //     "createDiscussion": {
+  //       "clientMutationId": null,
+  //       "discussion": {
+  //         "id": "D_kwDOAScDVc4AUngI",
+  //         "title": "The title",
+  //         "body": "The body",
+  //         "createdAt": "2023-07-15T11:03:47Z",
+  //         "url": "https://github.com/jiacai2050/blog/discussions/14"
+  //       }
+  //     }
+  //   }
+  // }
+  json_auto_t *response = NULL;
+  omg_error err =
+      omg_request(ctx, POST_METHOD, GRAPHQL_ROOT, request, &response);
+  if (!is_ok(err)) {
+    return err;
+  }
+  json_t *discussion = json_object_get(
+      json_object_get(json_object_get(response, "data"), "createDiscussion"),
+      "discussion");
+
+  *out = (omg_discussion){.id = dup_json_string(discussion, "id"),
+                          .url = dup_json_string(discussion, "url")};
+
+  return NO_ERROR;
 }

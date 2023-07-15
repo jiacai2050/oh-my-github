@@ -247,6 +247,16 @@ omg_error omg_create_pull(omg_context ctx, const char *full_name,
 omg_error omg_toggle_pull(omg_context ctx, const char *full_name,
                           int32_t pull_number, bool close);
 
+// Discussions
+typedef struct {
+  char *id;
+  char *url;
+} omg_discussion;
+
+omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
+                                 const char *category_id, const char *title,
+                                 const char *body, omg_discussion *out);
+
 // Utils
 omg_error omg_download(omg_context ctx, const char *url, const char *filename);
 
