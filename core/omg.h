@@ -253,6 +253,11 @@ typedef struct {
   char *url;
 } omg_discussion;
 
+void omg_free_discussion(omg_discussion *);
+
+#define omg_auto_discussion                                                    \
+  omg_discussion __attribute__((cleanup(omg_free_discussion)))
+
 omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
                                  const char *category_id, const char *title,
                                  const char *body, omg_discussion *out);

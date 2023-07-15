@@ -38,6 +38,7 @@
 (require 'seq)
 (require 'omg-core)
 (require 'omg-commit)
+(require 'omg-discussion)
 (require 'omg-gist)
 (require 'omg-pull)
 (require 'omg-release)

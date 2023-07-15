@@ -1529,20 +1529,6 @@ omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
   json_auto_t *request = json_object();
   json_object_set_new(request, "query", json_string(mutation));
 
-  //   {
-  //   "data": {
-  //     "createDiscussion": {
-  //       "clientMutationId": null,
-  //       "discussion": {
-  //         "id": "D_kwDOAScDVc4AUngI",
-  //         "title": "The title",
-  //         "body": "The body",
-  //         "createdAt": "2023-07-15T11:03:47Z",
-  //         "url": "https://github.com/jiacai2050/blog/discussions/14"
-  //       }
-  //     }
-  //   }
-  // }
   json_auto_t *response = NULL;
   omg_error err =
       omg_request(ctx, POST_METHOD, GRAPHQL_ROOT, request, &response);
@@ -1557,4 +1543,11 @@ omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
                           .url = dup_json_string(discussion, "url")};
 
   return NO_ERROR;
+}
+
+void omg_free_discussion(omg_discussion *discussion) {
+  if (discussion != NULL) {
+    free(discussion->url);
+    free(discussion->id);
+  }
 }
