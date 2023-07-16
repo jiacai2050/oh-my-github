@@ -63,10 +63,9 @@ ifeq ($(ENABLE_ASAN), 1)
 	LDFLAGS += -fno-omit-frame-pointer -fno-optimize-sibling-calls -fsanitize=address
 endif
 
-all: $(CLI) emacs-dyn
-
-$(CLI):
+all:
 	zig build -Doptimize=ReleaseSafe
+	mv zig-out/lib/libomg-dyn.dylib emacs/omg-dyn.so
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

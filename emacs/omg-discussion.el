@@ -33,6 +33,7 @@
          (ret (omg-dyn-create-discussion repo-id category-id title body))
          (link (plist-get ret 'url)))
     (message "Discussion created: %s" ret)
+    (kill-buffer)
     (when omg-discussion-open-in-browser
       (browse-url-default-browser link))))
 
