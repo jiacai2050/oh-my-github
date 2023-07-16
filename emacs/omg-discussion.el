@@ -55,10 +55,10 @@
 ;;;###autoload
 (defun omg-discussion-create ()
   (interactive)
-  (let* ((meta (concat "#+TITLE:"
-                       "\n#+REPO-ID:"
+  (let* ((meta (concat "#+TITLE: "
+                       "\n#+REPO-ID: "
                        omg-discussion-repo-id
-                       "\n#+CATEGORY-ID:"
+                       "\n#+CATEGORY-ID: "
                        omg-discussion-category-id
                        "\n")))
     (with-current-buffer (get-buffer-create (format omg-discussion--buf-basename

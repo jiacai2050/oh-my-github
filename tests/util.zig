@@ -16,7 +16,7 @@ pub fn init_ctx() !c.omg_context {
 
 pub fn check_error(err: c.omg_error) !void {
     if (!c.is_ok(err)) {
-        std.log.err("omg_error code:{d}, msg:{s}", .{ err.code, err.message });
+        std.log.err("check error failed, code:{d}, msg:{s}", .{ err.code, err.message });
         return error.TestUnexpectedError;
     }
 }

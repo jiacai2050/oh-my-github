@@ -1512,9 +1512,10 @@ omg_error omg_toggle_pull(omg_context ctx, const char *full_name,
   return omg_request(ctx, PATCH_METHOD, url, request, NULL);
 }
 
-omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
-                                 const char *category_id, const char *title,
-                                 const char *body, omg_discussion *out) {
+omg_error omg_create_discusstion_not_used(omg_context ctx, const char *repo_id,
+                                          const char *category_id,
+                                          const char *title, const char *body,
+                                          omg_discussion *out) {
 
   char mutation[4096];
   sprintf(

@@ -11,7 +11,7 @@ pub fn main() !void {
     const ctx = try util.init_ctx();
 
     // https://github.com/xigua2023/test-github-api/discussions
-    // try create(ctx);
+    try create(ctx);
     try query(ctx);
 }
 
@@ -32,7 +32,7 @@ fn create(ctx: c.omg_context) !void {
     const category_id = "DIC_kwDOJ8Azuc4CX6mT";
     var buf = std.mem.zeroes([40]u8);
     const title = try std.fmt.bufPrintZ(&buf, "Awesome Title-{d}", .{time.milliTimestamp()});
-    const body = "## test from omg\n Succeed!";
+    const body = "## Test from omg\n Succeed!";
     var out = c.omg_discussion{ .url = null, .id = null };
     try util.check_error(c.omg_create_discusstion(ctx, repo_id, category_id, title, body, &out));
     defer {
@@ -43,5 +43,5 @@ fn create(ctx: c.omg_context) !void {
     const url = std.mem.span(out.url);
     try testing.expect(std.mem.indexOf(u8, url, "xigua") != null);
     try testing.expect(out.id != null);
-    // std.debug.print("{s}-{s}\n", .{ out.url, out.id });
+    std.debug.print("Success: {s}-{s}\n", .{ out.url, out.id });
 }
