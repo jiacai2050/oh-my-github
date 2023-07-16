@@ -1,5 +1,6 @@
 #ifndef OMG_H
 #define OMG_H
+#include <curl/curl.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -23,9 +24,10 @@ typedef struct omg_error {
 
 void print_error(omg_error err);
 bool is_ok(omg_error err);
+omg_error new_error(int code, const char *msg);
 
-/* Opaque pointer representing omg core concept: context
-   All omg-related functions require this argument!  */
+// Opaque pointer representing omg core concept.
+// All omg-related functions require this argument!
 typedef struct omg_context *omg_context;
 
 omg_error omg_setup_context(const char *path, const char *github_token,
@@ -33,6 +35,9 @@ omg_error omg_setup_context(const char *path, const char *github_token,
 
 void omg_free_context(omg_context *ctx);
 #define omg_auto_context omg_context __attribute__((cleanup(omg_free_context)))
+
+// Internal usage.
+CURL *omg__curl_handler(omg_context);
 
 typedef struct {
   int id;
@@ -261,6 +266,21 @@ void omg_free_discussion(omg_discussion *);
 omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
                                  const char *category_id, const char *title,
                                  const char *body, omg_discussion *out);
+
+typedef struct {
+  char *id;
+  char *name;
+} omg_discussion_category;
+
+typedef struct {
+  char *id;
+  omg_discussion_category *categories;
+  size_t len;
+} omg_repo_discussion_category;
+
+omg_error omg_query_repo_discussion_category(omg_context, const char *owner,
+                                             const char *name,
+                                             omg_repo_discussion_category *);
 
 // Utils
 omg_error omg_download(omg_context ctx, const char *url, const char *filename);

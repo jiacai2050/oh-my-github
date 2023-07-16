@@ -145,7 +145,7 @@ bool is_ok(omg_error err) { return err.code == OMG_CODE_OK; }
 
 static const omg_error NO_ERROR = {.code = OMG_CODE_OK, .message = {}};
 
-static omg_error new_error(int code, const char *msg) {
+omg_error new_error(int code, const char *msg) {
   size_t msg_size = strlen(msg);
   if (msg_size == 0) {
     return NO_ERROR;
@@ -278,6 +278,8 @@ omg_error omg_setup_context(const char *path, const char *github_token,
   return NO_ERROR;
 }
 
+CURL *omg__curl_handler(omg_context ctx) { return ctx->api_curl; }
+
 static omg_error omg_request(omg_context ctx, const char *method,
                              const char *url, json_t *payload, json_t **out) {
   CURL *curl = ctx->api_curl;
@@ -345,8 +347,7 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
 
   FILE *file = fopen(filename, "wb");
   if (!file) {
-    return (omg_error){.code = OMG_CODE_INTERNAL,
-                       .message = "open file failed"};
+    return new_error(OMG_CODE_INTERNAL, "open db file failed");
   }
 
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
@@ -360,8 +361,7 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
   if (response_code >= 400) {
     fprintf(stderr, "Download %s failed with %ld", filename, response_code);
-    return (omg_error){.code = OMG_CODE_CURL,
-                       .message = "download file failed"};
+    return new_error(OMG_CODE_CURL, "download file failed");
   }
 
   return NO_ERROR;

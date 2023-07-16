@@ -10,6 +10,7 @@ pub fn build(b: *std.Build) !void {
     const quick = b.option(bool, "quick", "Enable quick mode");
     const core_lib = b.addStaticLibrary(.{
         .name = "omg-core",
+        .root_source_file = .{ .path = "core/omg.zig" },
         .target = target,
         .optimize = optimize,
     });
@@ -33,6 +34,7 @@ pub fn build(b: *std.Build) !void {
             try cflags.append("-DOMG_TEST");
         }
     }
+    core_lib.addIncludePath("core");
     core_lib.addCSourceFile("./core/omg.c", cflags.items);
     core_lib.linkSystemLibrary("sqlite3");
     core_lib.linkSystemLibrary("libcurl");
