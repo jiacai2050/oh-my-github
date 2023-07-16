@@ -84,7 +84,7 @@ fn test_create_pull(ctx: ?*clib.struct_omg_context) anyerror!void {
         .additions = -1,
         .deletions = -1,
     };
-    const full_name = "jiacai2050/oh-my-github";
+    const full_name = "xigua2023/xigua2023";
     try check_error(clib.omg_create_pull(
         ctx,
         full_name,
@@ -92,17 +92,17 @@ fn test_create_pull(ctx: ?*clib.struct_omg_context) anyerror!void {
         \\ # hello
         \\ just a test
     ,
-        "jiacai2050:feat-gist",
-        "master",
+        "xigua2023:test",
+        "main",
         false, // draft
         &resp,
     ));
     defer check_error(clib.omg_toggle_pull(ctx, full_name, resp.number, true)) catch {};
 
     try testing.expect(resp.number > 0);
-    try testing.expectEqual(@as(i32, 6), resp.commits);
-    try testing.expectEqual(@as(i32, 940), resp.additions);
-    try testing.expectEqual(@as(i32, 330), resp.deletions);
+    try testing.expectEqual(@as(i32, 1), resp.commits);
+    try testing.expectEqual(@as(i32, 3), resp.additions);
+    try testing.expectEqual(@as(i32, 8), resp.deletions);
 }
 
 fn test_star_repo(ctx: ?*clib.struct_omg_context) anyerror!void {

@@ -3,19 +3,18 @@ name: CI
 on:
   workflow_dispatch:
   pull_request:
-    paths:
-      - '**.zig'
-      - '**.c'
-      - '**.h'
-      - 'Makefile'
+    paths-ignore:
+      - '**.md'
+      - '**.org'
+      - '.dir-locals.el'
   push:
     branches:
+      - main
       - master
-    paths:
-      - '**.zig'
-      - '**.c'
-      - '**.h'
-      - 'Makefile'
+    paths-ignore:
+      - '**.md'
+      - '**.org'
+      - '.dir-locals.el'
 
 env:
   GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
@@ -32,18 +31,26 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v3
-      - uses: goto-bus-stop/setup-zig@v1
+      - uses: goto-bus-stop/setup-zig@v2
         with:
           version: master
       - run: make install-deps
       - name: gcc compile
         run: make all
       - name: zig compile
-        run: zig build -Dquick=true
-      - name: Test
+        run: |
+          make clean
+          zig build -Dquick=true -Dcpu=baseline --verbose
+      - name: Test core
         if: matrix.os == 'ubuntu-latest'
         run: |
-          zig build -Dcpu=baseline --verbose
           TEST_BINARY=./zig-out/bin/test-core
+          valgrind --leak-check=full --tool=memcheck \
+          --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY}
+
+      - name: Test discussion
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          TEST_BINARY=./zig-out/bin/test-discussion
           valgrind --leak-check=full --tool=memcheck \
           --show-leak-kinds=all --error-exitcode=1 ${TEST_BINARY}
