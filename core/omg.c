@@ -54,17 +54,17 @@ static void free_response(response *resp) {
   }
 }
 
-/* static void free_curl_slist(struct curl_slist **lst) { */
-/*   if (*lst) { */
-/* #ifdef VERBOSE */
-/*     printf("free curl list, body is %s\n", (*lst)->data); */
-/* #endif */
-/*     curl_slist_free_all(*lst); */
-/*   } */
-/* } */
+// static void free_curl_slist(struct curl_slist **lst) {
+//   if (*lst) {
+// #ifdef VERBOSE
+//     printf("free curl list, body is %s\n", (*lst)->data);
+// #endif
+//     curl_slist_free_all(*lst);
+//   }
+// }
 
-/* #define auto_curl_slist \ */
-/*   struct curl_slist __attribute__((cleanup(free_curl_slist))) */
+// #define auto_curl_slist \
+//   struct curl_slist __attribute__((cleanup(free_curl_slist)))
 
 static void free_curl_handler(CURL **curl) {
   if (*curl) {
@@ -145,7 +145,7 @@ bool is_ok(omg_error err) { return err.code == OMG_CODE_OK; }
 
 static const omg_error NO_ERROR = {.code = OMG_CODE_OK, .message = {}};
 
-static omg_error new_error(int code, const char *msg) {
+omg_error new_error(int code, const char *msg) {
   size_t msg_size = strlen(msg);
   if (msg_size == 0) {
     return NO_ERROR;
@@ -278,6 +278,8 @@ omg_error omg_setup_context(const char *path, const char *github_token,
   return NO_ERROR;
 }
 
+CURL *omg__curl_handler(omg_context ctx) { return ctx->api_curl; }
+
 static omg_error omg_request(omg_context ctx, const char *method,
                              const char *url, json_t *payload, json_t **out) {
   CURL *curl = ctx->api_curl;
@@ -345,8 +347,7 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
 
   FILE *file = fopen(filename, "wb");
   if (!file) {
-    return (omg_error){.code = OMG_CODE_INTERNAL,
-                       .message = "open file failed"};
+    return new_error(OMG_CODE_INTERNAL, "open db file failed");
   }
 
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
@@ -360,8 +361,7 @@ omg_error omg_download(omg_context ctx, const char *url, const char *filename) {
   curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
   if (response_code >= 400) {
     fprintf(stderr, "Download %s failed with %ld", filename, response_code);
-    return (omg_error){.code = OMG_CODE_CURL,
-                       .message = "download file failed"};
+    return new_error(OMG_CODE_CURL, "download file failed");
   }
 
   return NO_ERROR;
@@ -1529,32 +1529,39 @@ omg_error omg_create_discusstion(omg_context ctx, const char *repo_id,
   json_auto_t *request = json_object();
   json_object_set_new(request, "query", json_string(mutation));
 
-  //   {
-  //   "data": {
-  //     "createDiscussion": {
-  //       "clientMutationId": null,
-  //       "discussion": {
-  //         "id": "D_kwDOAScDVc4AUngI",
-  //         "title": "The title",
-  //         "body": "The body",
-  //         "createdAt": "2023-07-15T11:03:47Z",
-  //         "url": "https://github.com/jiacai2050/blog/discussions/14"
-  //       }
-  //     }
-  //   }
-  // }
   json_auto_t *response = NULL;
   omg_error err =
       omg_request(ctx, POST_METHOD, GRAPHQL_ROOT, request, &response);
   if (!is_ok(err)) {
     return err;
   }
-  json_t *discussion = json_object_get(
-      json_object_get(json_object_get(response, "data"), "createDiscussion"),
-      "discussion");
+  json_t *create =
+      json_object_get(json_object_get(response, "data"), "createDiscussion");
+  if (json_is_null(create)) {
+    json_t *errors = json_object_get(response, "errors");
+    if (json_is_null(errors)) {
+      return (omg_error){.code = OMG_CODE_CURL, .message = "Unknown error!"};
+    }
 
+    return new_error(OMG_CODE_CURL, json_string_value(json_object_get(
+                                        json_array_get(errors, 0), "message")));
+  }
+
+  json_t *discussion = json_object_get(create, "discussion");
   *out = (omg_discussion){.id = dup_json_string(discussion, "id"),
                           .url = dup_json_string(discussion, "url")};
 
   return NO_ERROR;
+}
+
+void omg_free_discussion(omg_discussion *discussion) {
+  if (discussion != NULL) {
+    if (discussion->url) {
+      free(discussion->url);
+    }
+
+    if (discussion->id) {
+      free(discussion->id);
+    }
+  }
 }

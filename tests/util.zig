@@ -4,7 +4,7 @@ const c = @cImport({
     @cInclude("omg.h");
 });
 
-pub fn init_ctx() !?*c.struct_omg_context {
+pub fn init_ctx() !c.omg_context {
     const db_path = std.c.getenv("DB_PATH").?;
     const token = std.c.getenv("GITHUB_TOKEN").?;
     var ctx: ?*c.struct_omg_context = null;

@@ -7,6 +7,6 @@
                       (eglot-ensure)
                       (add-hook 'before-save-hook 'eglot-format nil t)))))
  (nil . ((omg-pull-target-repo . "jiacai2050/oh-my-github")
-         (omg-pull-target-branch . "master")
+         (omg-pull-target-branch . "main")
          (omg-pull-username  . "jiacai2050")
          (omg-pull-draft . "false"))))

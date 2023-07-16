@@ -702,6 +702,28 @@ emacs_value omg_dyn_create_pull(emacs_env *env, ptrdiff_t nargs,
       lisp_symbol(env, "deletions"), lisp_integer(env, create_ret.deletions));
 }
 
+emacs_value omg_dyn_create_discussion(emacs_env *env, ptrdiff_t nargs,
+                                      emacs_value *args, void *data) {
+  ENSURE_SETUP(env);
+  omg_auto_char repo_id = get_string(env, args[0]);
+  omg_auto_char category_id = get_string(env, args[1]);
+  omg_auto_char title = get_string(env, args[2]);
+  omg_auto_char text = get_string(env, args[3]);
+  ENSURE_NONLOCAL_EXIT(env);
+
+  omg_auto_discussion create_ret = {};
+  omg_error err = omg_create_discusstion(ctx, repo_id, category_id, title, text,
+                                         &create_ret);
+
+  if (!is_ok(err)) {
+    return lisp_funcall(env, "error", lisp_string(env, (char *)err.message));
+  }
+
+  return lisp_funcall(env, "list", lisp_symbol(env, "id"),
+                      lisp_string(env, create_ret.id), lisp_symbol(env, "url"),
+                      lisp_string(env, create_ret.url), );
+}
+
 emacs_value omg_dyn_setup(emacs_env *env, ptrdiff_t nargs, emacs_value *args,
                           void *data) {
   if (ctx) {
@@ -823,7 +845,11 @@ int emacs_module_init(runtime ert) {
 
   lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-create-pull"),
                env->make_function(env, 6, 6, omg_dyn_create_pull,
-                                  "Create GitHub Pull Request", NULL));
+                                  "Create GitHub pull request", NULL));
+
+  lisp_funcall(env, "fset", lisp_symbol(env, "omg-dyn-create-discussion"),
+               env->make_function(env, 4, 4, omg_dyn_create_discussion,
+                                  "Create GitHub discussion", NULL));
 
   lisp_funcall(env, "provide", lisp_symbol(env, FEATURE_NAME));
 
