@@ -84,7 +84,7 @@ fn test_create_pull(ctx: ?*clib.struct_omg_context) anyerror!void {
         .additions = -1,
         .deletions = -1,
     };
-    const full_name = "jiacai2050/oh-my-github";
+    const full_name = "xigua2023/xigua2023";
     try check_error(clib.omg_create_pull(
         ctx,
         full_name,
@@ -93,7 +93,7 @@ fn test_create_pull(ctx: ?*clib.struct_omg_context) anyerror!void {
         \\ just a test
     ,
         "jiacai2050:feat-gist",
-        "master",
+        "main",
         false, // draft
         &resp,
     ));
