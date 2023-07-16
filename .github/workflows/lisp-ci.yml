@@ -24,13 +24,16 @@ jobs:
       - uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
+      - uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: master
       - uses: actions/checkout@v3
       - name: Install dependencies
         run: |
           make install-deps
       - name: Compile dyn
         run: |
-          OMG_VERBOSE=1 OMG_TEST=1 make clean emacs-dyn
+          OMG_VERBOSE=1 OMG_TEST=1 make clean all
       - name: Run test
         working-directory: emacs
         env:
