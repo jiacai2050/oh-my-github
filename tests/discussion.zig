@@ -23,7 +23,7 @@ fn query(ctx: c.omg_context) !void {
     };
     try util.check_error(c.omg_query_repo_discussion_category(ctx, "xigua2023", "test-github-api", &out));
     defer {
-        // TODO: free out
+        c.omg_free_repo_discussion_category(&out);
     }
 }
 

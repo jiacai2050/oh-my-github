@@ -1566,3 +1566,15 @@ void omg_free_discussion(omg_discussion *discussion) {
     }
   }
 }
+
+void omg_free_repo_discussion_category(omg_repo_discussion_category *category) {
+  if (category != NULL) {
+    free(category->id);
+    for (size_t i = 0; i < category->len; i++) {
+      free(category->categories[i].id);
+      free(category->categories[i].name);
+    }
+
+    free(category->categories);
+  }
+}

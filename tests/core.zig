@@ -106,7 +106,7 @@ fn test_create_pull(ctx: ?*clib.struct_omg_context) anyerror!void {
 }
 
 fn test_star_repo(ctx: ?*clib.struct_omg_context) anyerror!void {
-    try check_error(clib.omg_star_repo(ctx, "jiacai2050/oh-my-github"));
+    try check_error(clib.omg_star_repo(ctx, "xigua2023/xigua2023"));
 }
 
 pub fn main() anyerror!void {
