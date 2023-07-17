@@ -8,7 +8,8 @@ const testing = std.testing;
 const time = std.time;
 
 pub fn main() !void {
-    const ctx = try util.init_ctx();
+    var ctx = try util.init_ctx();
+    defer c.omg_free_context(&ctx);
 
     // https://github.com/xigua2023/test-github-api/discussions
     try create(ctx);
