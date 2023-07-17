@@ -8,7 +8,8 @@ const testing = std.testing;
 const time = std.time;
 
 pub fn main() !void {
-    const ctx = try util.init_ctx();
+    var ctx = try util.init_ctx();
+    defer c.omg_free_context(&ctx);
 
     // https://github.com/xigua2023/test-github-api/discussions
     try create(ctx);
@@ -23,7 +24,7 @@ fn query(ctx: c.omg_context) !void {
     };
     try util.check_error(c.omg_query_repo_discussion_category(ctx, "xigua2023", "test-github-api", &out));
     defer {
-        // TODO: free out
+        c.omg_free_repo_discussion_category(&out);
     }
 }
 

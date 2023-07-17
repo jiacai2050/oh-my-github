@@ -278,6 +278,12 @@ typedef struct {
   size_t len;
 } omg_repo_discussion_category;
 
+void omg_free_repo_discussion_category(omg_repo_discussion_category *);
+
+#define omg_auto_repo_discussion_category                                      \
+  omg_repo_discussion_category                                                 \
+      __attribute__((cleanup(omg_free_repo_discussion_category)))
+
 omg_error omg_query_repo_discussion_category(omg_context, const char *owner,
                                              const char *name,
                                              omg_repo_discussion_category *);
