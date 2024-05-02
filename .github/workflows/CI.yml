@@ -29,11 +29,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
+        zig-version: [0.12.0]
     steps:
       - uses: actions/checkout@v3
       - uses: goto-bus-stop/setup-zig@v2
         with:
-          version: master
+          version: ${{ matrix.zig-version }}
       - run: make install-deps
       - name: gcc compile
         run: make all

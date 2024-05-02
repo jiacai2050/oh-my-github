@@ -2,7 +2,6 @@ omg-cli
 *.log
 *.db
 *.so
-*.json
 *.o
 *.dylib
 /.vagrant
@@ -12,3 +11,4 @@ zig-out
 .env
 .project
 share.org
+vcpkg_installed/

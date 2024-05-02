@@ -115,10 +115,7 @@ fn query_inner(
     defer json.deinit();
 
     try std.json.stringify(json.value, .{
-        .whitespace = .{
-            .indent = .{ .space = 1 },
-            .separator = false,
-        },
+        .whitespace = .indent_1,
     }, std.io.getStdOut().writer());
 
     if (json.value.errors) |e| {
@@ -156,7 +153,7 @@ export fn omg_query_repo_discussion_category(
     name: [*c]const u8,
     out: *c.omg_repo_discussion_category,
 ) c.omg_error {
-    var diag = c.omg_error{ .code = c.OMG_CODE_OK, .message = .{} };
+    var diag = c.omg_error{ .code = c.OMG_CODE_OK, .message = undefined };
     const r = query_inner(ctx, mem.span(owner), mem.span(name), &diag) catch |e| {
         if (c.is_ok(diag)) {
             return c.new_error(c.OMG_CODE_INTERNAL, @errorName(e));
@@ -166,7 +163,7 @@ export fn omg_query_repo_discussion_category(
     };
 
     out.* = r;
-    return c.omg_error{ .code = c.OMG_CODE_OK, .message = .{} };
+    return c.omg_error{ .code = c.OMG_CODE_OK, .message = undefined };
 }
 
 fn create_inner(
@@ -257,7 +254,7 @@ export fn omg_create_discusstion(
     body: [*c]const u8,
     out: *c.omg_discussion,
 ) c.omg_error {
-    var diag = c.omg_error{ .code = c.OMG_CODE_OK, .message = .{} };
+    var diag = c.omg_error{ .code = c.OMG_CODE_OK, .message = undefined };
     const r = create_inner(ctx, mem.span(repo_id), mem.span(category_id), mem.span(title), mem.span(body), &diag) catch |e| {
         if (c.is_ok(diag)) {
             return c.new_error(c.OMG_CODE_INTERNAL, @errorName(e));

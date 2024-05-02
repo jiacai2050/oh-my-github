@@ -1,7 +1,7 @@
 const c = @cImport({
     @cInclude("omg.h");
 });
-const Table = @import("table-helper").Table;
+const Table = @import("pretty-table").Table;
 const simargs = @import("simargs");
 
 const std = @import("std");
@@ -23,7 +23,7 @@ pub fn main() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    var opt = try simargs.parse(allocator, struct {
+    const opt = try simargs.parse(allocator, struct {
         mode: SubCommand,
         timeout: i32 = 10,
         help: bool = false,
@@ -42,11 +42,11 @@ pub fn main() !void {
         };
     }, "[args]", null);
 
-    const token = std.os.getenv("GITHUB_TOKEN");
+    const token = std.posix.getenv("GITHUB_TOKEN");
     if (null == token) {
         return error.TokenNotSet;
     }
-    const db_path = std.os.getenv("OMG_DB_PATH");
+    const db_path = std.posix.getenv("OMG_DB_PATH");
     if (null == db_path) {
         return error.DBPathNotSet;
     }
@@ -108,9 +108,10 @@ fn processTrend(allocator: std.mem.Allocator, ctx: c.omg_context, args: [][]cons
         });
         i += 1;
     }
-    const TrendingTable = Table(&headers);
+    const TrendingTable = Table(headers.len);
     const table = TrendingTable{
-        .data = table_data.items,
+        .header = headers,
+        .rows = table_data.items,
         .footer = null,
     };
     try std.io.getStdOut().writer().print("{}\n", .{table});

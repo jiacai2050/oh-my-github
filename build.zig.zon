@@ -1,14 +1,17 @@
 .{
     .name = "omg",
     .version = "0.1.0",
+    .paths = .{
+        "core",
+        "emacs",
+        "cli",
+        "build.zig",
+        "build.zig.zon",
+    },
     .dependencies = .{
-        .simargs = .{
-            .url = "https://github.com/jiacai2050/simargs/archive/1003b5c.tar.gz",
-            .hash = "1220b5dafa54081ce54f108d0b7fa9451149bde7dc7c20f4e14e322fdeeb7a1dfd9e",
-        },
-        .@"table-helper" = .{
-            .url = "https://github.com/jiacai2050/table-helper/archive/f0c8eb9.tar.gz",
-            .hash = "1220a9727955240d359a5a3e04b7f6ee073523d61b60bde8fbda2736eb8772c41cda",
+        .zigcli = .{
+            .url = "https://github.com/jiacai2050/zigcli/archive/c0c48df7567ea02458e9fc1f35c4088271b8d4a6.tar.gz",
+            .hash = "12206260a09f871fcd3726540c139d1801beeda788ca593a1bdb6eb0da671d3c3522",
         },
     },
 }

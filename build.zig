@@ -1,6 +1,6 @@
 const std = @import("std");
-const CompileStep = std.Build.CompileStep;
-const CrossTarget = std.zig.CrossTarget;
+const CompileStep = std.Build.Step.Compile;
+const CrossTarget = std.Build.ResolvedTarget;
 const OptimizeMode = std.builtin.OptimizeMode;
 
 pub fn build(b: *std.Build) !void {
@@ -34,8 +34,11 @@ pub fn build(b: *std.Build) !void {
             try cflags.append("-DOMG_TEST");
         }
     }
-    core_lib.addIncludePath("core");
-    core_lib.addCSourceFile("./core/omg.c", cflags.items);
+    core_lib.addIncludePath(b.path("core"));
+    core_lib.addCSourceFile(.{
+        .file = b.path("core/omg.c"),
+        .flags = cflags.items,
+    });
     core_lib.linkSystemLibrary("sqlite3");
     core_lib.linkSystemLibrary("libcurl");
     core_lib.linkSystemLibrary("jansson");
@@ -66,11 +69,15 @@ fn buildEmacsModule(b: *std.Build, core_lib: *CompileStep, target: CrossTarget, 
         .name = "omg-dyn",
         .target = target,
         .optimize = optimize,
+        .pic = true,
+        .link_libc = true,
     });
-    lib.force_pic = true;
-    lib.addIncludePath("emacs");
+    lib.addIncludePath(b.path("emacs"));
     lib.linkLibrary(core_lib);
-    lib.addCSourceFile("emacs/emacs.c", cflags);
+    lib.addCSourceFile(.{
+        .file = b.path("emacs/emacs.c"),
+        .flags = cflags,
+    });
     b.installArtifact(lib);
 }
 
@@ -82,17 +89,16 @@ fn buildCliTool(
 ) void {
     const exe = b.addExecutable(.{
         .name = "omg-cli",
-        .root_source_file = .{ .path = "cli/main.zig" },
+        .root_source_file = b.path("cli/main.zig"),
         .target = target,
         .optimize = optimize,
     });
 
-    const simargs_dep = b.dependency("simargs", .{});
-    const table_dep = b.dependency("table-helper", .{});
-    exe.addModule("simargs", simargs_dep.module("simargs"));
-    exe.addModule("table-helper", table_dep.module("table-helper"));
+    const zigcli_dep = b.dependency("zigcli", .{});
+    exe.root_module.addImport("simargs", zigcli_dep.module("simargs"));
+    exe.root_module.addImport("pretty-table", zigcli_dep.module("pretty-table"));
 
-    exe.addIncludePath("core");
+    exe.addIncludePath(b.path("core"));
     exe.linkLibrary(core_lib);
     exe.linkLibC();
     b.installArtifact(exe);
@@ -107,11 +113,11 @@ fn buildTest(
 ) void {
     const exe = b.addExecutable(.{
         .name = "test-" ++ name,
-        .root_source_file = .{ .path = "tests/" ++ name ++ ".zig" },
+        .root_source_file = b.path("tests/" ++ name ++ ".zig"),
         .target = target,
         .optimize = optimize,
     });
-    exe.addIncludePath("core");
+    exe.addIncludePath(b.path("core"));
     exe.linkLibrary(core_lib);
     exe.linkLibC();
     b.installArtifact(exe);

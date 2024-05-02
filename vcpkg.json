@@ -1,0 +1,7 @@
+{
+  "dependencies": [
+    "curl",
+    "sqlite3",
+    "jansson"
+  ]
+}
