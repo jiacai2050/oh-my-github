@@ -67,6 +67,13 @@ The figure below shows relations among them:
 - =omg-trending-list=, list trending repositories
 - =omg-whoami=, fetch user information
 - =omg-pull-create=, create a pull request. See [[https://en.liujiacai.net/2022/11/26/oh-my-github-1-0/][this blog post]] to check details.
+  #+begin_example
+#+TITLE: Awesome title
+#+TARGET-REPO: upstream/foo
+#+TARGET-BRANCH: main
+#+SOURCE-HEAD: my:main
+#+DRAFT: false
+  #+end_example
 
 * Screenshots
 *** Starred repositories
