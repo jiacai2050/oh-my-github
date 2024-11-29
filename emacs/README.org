@@ -34,7 +34,7 @@ Here is a =use-package= config demo(require Emacs 30 to use =:vc= keyword):
 
 (use-package omg
   :vc (omg :url "https://github.com/jiacai2050/oh-my-github"
-           :rev "v1.0.1"
+           :rev "v1.1.0"
            :make "emacs-dyn"
            :lisp-dir "emacs")
   :config
