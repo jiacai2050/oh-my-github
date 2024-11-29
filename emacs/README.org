@@ -19,7 +19,7 @@ Hope this explain what oh-my-github's design principle is, and why it exists bes
    - From [[https://github.com/jiacai2050/github-star/releases][release page]] according to your operating system
    - or you can build it yourself with =make install-deps emacs-dyn=
 3. Put above =el= and =so= files under =load-path=
-4. Generate Github personal access tokens at https://github.com/settings/tokens and set it to =omg-pat=, or add this to your auth-source for better security.
+4. Generate Github personal access tokens at https://github.com/settings/tokens and add it to authinfo like:
    #+begin_src
    machine api.github.com login ${github-username}^omg password ${token}
    #+end_src
@@ -28,13 +28,16 @@ Hope this explain what oh-my-github's design principle is, and why it exists bes
    2. Update git config by execute =git config --global github.user ${USER}=
 6. Initialize with =omg-setup=
 
-Here is a =use-package= config demo:
+Here is a =use-package= config demo(require Emacs 30 to use =:vc= keyword):
 #+BEGIN_SRC emacs-lisp
+(setq package-vc-allow-build-commands '(omg))
+
 (use-package omg
-  :load-path "/path/to/oh-my-github/emacs"
+  :vc (omg :url "https://github.com/jiacai2050/oh-my-github"
+           :rev "v1.0.1"
+           :make "emacs-dyn"
+           :lisp-dir "emacs")
   :config
-  ;; If you set token in auth-source, then you don't need to set this.
-  (setq omg-pat "${YOUR-TOKEN}")
   (omg-setup))
 #+END_SRC
 

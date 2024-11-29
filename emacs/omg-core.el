@@ -8,11 +8,6 @@
   :group 'omg
   :type 'file)
 
-(defcustom omg-pat nil
-  "GitHub personal access token"
-  :group 'omg
-  :type 'string)
-
 (defcustom omg-username nil
   "GitHub username"
   :group 'omg

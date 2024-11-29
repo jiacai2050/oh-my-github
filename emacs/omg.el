@@ -48,24 +48,29 @@
 
 ;;  Public main API
 
-;;;###autoload
-(defun omg-setup ()
-  "Setup oh-my-github"
-  (unless omg-username
-    (when-let ((user (omg--execute "config" "github.user")))
-      (setq omg-username user)))
-  (unless omg-pat
-    (when-let ((auths (auth-source-search :host "api.github.com"
-                                          :user (format "%s^omg" omg-username)))
-               (first-auth (car auths))
-               (token (funcall (plist-get first-auth :secret))))
-      (setq omg-pat token)))
+(defvar omg--already-setup nil)
 
-  (if (string-empty-p omg-pat)
-      (error "Personal access token not set.")
-    (omg-dyn-setup (expand-file-name omg-db-file)
-                   omg-pat
-                   omg-http-timeout)))
+;;;###autoload
+(defun omg-setup (&optional token)
+  "Setup oh-my-github"
+  (unless omg--already-setup
+    (unless omg-username
+      (when-let ((user (omg--execute "config" "github.user")))
+        (setq omg-username user)))
+
+    (unless token
+      (when-let* ((found (nth 0 (auth-source-search
+                                 :host "api.github.com"
+                                 :user (format "%s^omg" omg-username))))
+                  (pwd (auth-info-password found)))
+        (setq token pwd)))
+
+    (if (or (null token) (string-empty-p token))
+        (error "Personal access token not set.")
+      (omg-dyn-setup (expand-file-name omg-db-file)
+                     token
+                     omg-http-timeout)
+      (setq omg--already-setup t))))
 
 ;;;###autoload
 (defun omg-teardown ()

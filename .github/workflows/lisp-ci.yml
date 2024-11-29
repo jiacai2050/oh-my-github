@@ -15,18 +15,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        zig-version: [0.13.0]
         emacs_version:
-          - 27.1
-          - 27.2
-          - 28.3
+          - 28.2
+          - 29.3
           - snapshot
     steps:
       - uses: purcell/setup-emacs@master
         with:
           version: ${{ matrix.emacs_version }}
-      - uses: goto-bus-stop/setup-zig@v2
+      - uses: mlugg/setup-zig@v1
         with:
-          version: master
+          version: ${{ matrix.zig-version }}
       - uses: actions/checkout@v3
       - name: Install dependencies
         run: |
