@@ -79,8 +79,9 @@ memcheck:
 $(SO_FILE): $(EMACS_HEADERS) $(EMACS_OBJECTS)
 	$(CC) -shared $(EMACS_OBJECTS) $(LDFLAGS) -o $(SO_FILE)
 
-emacs-dyn: $(SO_FILE)
-	@echo "Emacs dynamic module saved to $(SO_FILE)"
+emacs-dyn:
+	zig build -Doptimize=ReleaseFast
+	mv zig-out/lib/libomg-dyn.* emacs/omg-dyn.so
 
 install-deps:
 ifeq ($(uname_S), Darwin)

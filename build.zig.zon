@@ -12,6 +12,7 @@
         .zigcli = .{
             .url = "https://github.com/jiacai2050/zigcli/archive/c0c48df7567ea02458e9fc1f35c4088271b8d4a6.tar.gz",
             .hash = "12206260a09f871fcd3726540c139d1801beeda788ca593a1bdb6eb0da671d3c3522",
+            .lazy = true,
         },
     },
 }

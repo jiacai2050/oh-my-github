@@ -49,7 +49,7 @@
 ;;  Public main API
 
 ;;;###autoload
-(defun omg-setup()
+(defun omg-setup ()
   "Setup oh-my-github"
   (unless omg-username
     (when-let ((user (omg--execute "config" "github.user")))

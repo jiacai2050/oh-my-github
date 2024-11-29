@@ -6,11 +6,12 @@ const OptimizeMode = std.builtin.OptimizeMode;
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const verbose = b.option(bool, "verbose", "Enable verbose log");
-    const quick = b.option(bool, "quick", "Enable quick mode");
+    const verbose = b.option(bool, "verbose", "Enable verbose log") orelse false;
+    const quick = b.option(bool, "quick", "Enable quick mode") orelse false;
+    const build_cli = b.option(bool, "build_cli", "Whether build cli") orelse false;
     const core_lib = b.addStaticLibrary(.{
         .name = "omg-core",
-        .root_source_file = .{ .path = "core/omg.zig" },
+        .root_source_file = b.path("core/omg.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -24,15 +25,11 @@ pub fn build(b: *std.Build) !void {
     try cflags.append("-Wno-unused-parameter");
     try cflags.append("-Wno-gnu");
     try cflags.append("-Wimplicit-fallthrough");
-    if (verbose) |v| {
-        if (v) {
-            try cflags.append("-DVERBOSE");
-        }
+    if (verbose) {
+        try cflags.append("-DVERBOSE");
     }
-    if (quick) |v| {
-        if (v) {
-            try cflags.append("-DOMG_TEST");
-        }
+    if (quick) {
+        try cflags.append("-DOMG_TEST");
     }
     core_lib.addIncludePath(b.path("core"));
     core_lib.addCSourceFile(.{
@@ -46,12 +43,14 @@ pub fn build(b: *std.Build) !void {
     core_lib.linkLibC();
 
     buildEmacsModule(b, core_lib, target, optimize, cflags.items);
-    buildCliTool(
-        b,
-        core_lib,
-        target,
-        optimize,
-    );
+    if (build_cli) {
+        buildCliTool(
+            b,
+            core_lib,
+            target,
+            optimize,
+        );
+    }
 
     inline for (.{ "core", "discussion" }) |name| {
         buildTest(
@@ -94,7 +93,7 @@ fn buildCliTool(
         .optimize = optimize,
     });
 
-    const zigcli_dep = b.dependency("zigcli", .{});
+    const zigcli_dep = b.lazyDependency("zigcli", .{}) orelse return {};
     exe.root_module.addImport("simargs", zigcli_dep.module("simargs"));
     exe.root_module.addImport("pretty-table", zigcli_dep.module("pretty-table"));
 

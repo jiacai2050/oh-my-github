@@ -6,7 +6,7 @@ omg-cli
 *.dylib
 /.vagrant
 .DS_Store
-zig-cache
+.zig-cache
 zig-out
 .env
 .project
